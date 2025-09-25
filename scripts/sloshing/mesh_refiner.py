@@ -401,10 +401,27 @@ class MeshRefiner:
 
 
 """
+From Blender:
+- edit mode -> select all faces -> ctrl+T (to triangulate)
+- select all
+- file -> export -> ply:
+  𐄂 ASCII
+  ✓ Selectin Only
+  Scale 1.000
+  Forward Axis -Z
+  Up Axis Y
+
+  𐄂 UV Coordinates
+  ✓ Vertex Normals
+  ✓ Vertex Attributes
+  Vertex Colors sRGB
+  ✓ Triangulated Mesh
+  𐄂 Apply Modifiers
+
 Use:
 from mesh_refiner import MeshRefiner
 refiner = MeshRefiner("path/to/model.ply")
-refined = refiner.refine_mesh(subdivision_levels=2, smooth_iterations=10)
+refined = refiner.refine_mesh(subdivision_levels=7, smooth_iterations=10)
 refiner.save_mesh("output/refined_model.ply")
 refiner.visualize_mesh(use_refined=True, show_wireframe=False)
 """
