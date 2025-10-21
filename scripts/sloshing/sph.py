@@ -567,56 +567,60 @@ class SPH_Simulation:
         ###########################################################################
         # FLUID SIMULATION PARAMS (SPATIAL)
         # SPH kernel smoothing length (radius of influence for particle interactions).
-        # ? Default: 0.8. Particle count 1/(smoothing_length)³ per cube-unit. Lower => more precision but much slower
-        self.smoothing_length = 1/(10**(1/3))
+        # ? Particle count 1/(smoothing_length)³ per cube-unit.
+        # ? In other terms, each particle typically occupies a volume of smoothing_length³.
+        # ? Default: 0.8. Lower => more precision but much slower
+        # ? 1/(num_particles_for_each_cm_cubed**(1/3))
+        self.smoothing_length = 1/(27**(1/3)) # [cm]
         # Initial position offsets for particle placement.
-        self.x0 = 0.0
-        self.y0 = 0.0
-        self.z0 = 0.0
+        self.x0 = 0.0   # [cm]
+        self.y0 = 0.0   # [cm]
+        self.z0 = 0.0   # [cm]
         # Fluid block dimensions.
-        self.width = 40.0   # x
-        self.height = 20.0  # y
-        self.length = 20.0  # z
+        self.width = 40.0   # [cm] - x direction
+        self.height = 20.0  # [cm] - y direction
+        self.length = 20.0  # [cm] - z direction
         # Total number of particles in the simulation.
         self.n = int(self.height * self.width * self.length / (self.smoothing_length**3))
         # Boundaries parameters
-        self.xl = 0.0
-        self.xr = 40.0
-        self.xs = 2.0
-        self.yb = 0.0
-        self.zl = 0.0
-        self.zr = 20.0
-        self.zs = 4.0
+        self.xl = 0.0   # [cm] - left boundary x at y=0
+        self.xr = 40.0  # [cm] - right boundary x at y=0
+        self.xs = 2.0   # []   - x-axis wall slope
+        self.yb = 0.0   # [cm] - bottom boundary y
+        self.zl = 0.0   # [cm] - left boundary z at y=0
+        self.zr = 20.0  # [cm] - right boundary z at y=0
+        self.zs = 4.0   # []   - z-axis wall slope
         ###########################################################################
         # FLUID SIMULATION PARAMS (PHYSICAL)
         # Reference density of the fluid.
-        self.base_density = 1.0
+        self.base_density = 1.0 # [g/cm³] - water at standard conditions
         # Exponent for isotropic pressure calculations.
-        self.isotropic_exp = 20
+        self.isotropic_exp = 100 # [cm²/s²] - stiffness (~100-500 for water)
         # Mass of each particle, scaled by smoothing length cubed.
-        self.particle_mass = 0.01 * self.smoothing_length**3  # mass proportional to smoothing length cubed
+        #? Mass proportional to smoothing length cubed
+        self.particle_mass = self.base_density * self.smoothing_length**3   # ! [g] - (originally: 0.01 * self.smoothing_length³)
         # Dynamic viscosity coefficient.
-        self.dynamic_visc = 0.025
+        self.dynamic_visc = 0.01   # [g/(cm·s)] = [Poise] - internal fluid friction
         # Damping coefficient for boundary collisions.
-        self.damping_coef = -0.95
+        self.damping_coef = -0.95   # [] - negative for damping
         # Gravitational acceleration (negative for downward).
-        self.gravity = -1.0
+        self.gravity = -981.0 # [cm/s²]
         ###########################################################################
         # SIM/RENDER TIME PARAMS
         # Time step for rendering frames (1/fps).
-        self.fps = 60
+        self.fps = 60   # [Hz] = [1/s]
         # Total number of frames to simulate, set by simulate() method
         self.tot_frames = 0
         # Time interval between rendered frames.
-        self.frame_dt = 1.0 / self.fps # !!
+        self.frame_dt = 1.0 / self.fps # [s]
         # Current simulation time, initialized to 0.0.
         self.sim_time = 0.0
         # Current frame index in the simulation sequence
         self.current_frame = 0 
-        # Time between each sub-step of the physical simulation calculation.
-        self.dt = 0.01 * self.smoothing_length  # !!
         # Number of simulation steps per rendered frame. Note: 32 is a random choice.
-        self.substeps = int(32 / self.smoothing_length)
+        self.substeps = int(32 / self.smoothing_length) # !
+        # Time between each sub-step of the physical simulation calculation.
+        self.dt = self.frame_dt / self.substeps # ! [s] (originally: 0.01 * self.smoothing_length)
         ###########################################################################
         # CONSTANTS
         # Normalization constant for density kernel integration.
@@ -852,21 +856,26 @@ class SPH_Simulation:
 
 if __name__ == "__main__":
     import argparse
+    import time
 
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--device", type=str, default=None, help="Override the default Warp device.")
     parser.add_argument(
         "--stage_path",
         type=lambda x: None if x == "None" else str(x),
-        default="example_sph.usd",
+        default="sph_sim.usd",
         help="Path to the output USD file.",
     )
     parser.add_argument("--num_frames", type=int, default=600, help="Total number of frames.")
     parser.add_argument("--verbose", action="store_true", help="Print out additional status messages during execution.")
 
     args = parser.parse_known_args()[0]
+    
+    starting_time = time.time()
 
     with wp.ScopedDevice(args.device):
         sim = SPH_Simulation(stage_path=args.stage_path, verbose=args.verbose)
-
         sim.simulate(args.num_frames)
+
+    elapsed_time = time.time() - starting_time
+    print(f"Simulation completed in {elapsed_time:.2f} seconds.")
