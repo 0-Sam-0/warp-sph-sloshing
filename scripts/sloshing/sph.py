@@ -571,7 +571,7 @@ class SPH_Simulation:
         # ? In other terms, each particle typically occupies a volume of smoothing_length³.
         # ? Default: 0.8. Lower => more precision but much slower
         # ? 1/(num_particles_for_each_cm_cubed**(1/3))
-        self.smoothing_length = 1/(27**(1/3)) # [cm]
+        self.smoothing_length = 1/(10**(1/3)) # [cm]
         # Initial position offsets for particle placement.
         self.x0 = 0.0   # [cm]
         self.y0 = 0.0   # [cm]
@@ -597,30 +597,34 @@ class SPH_Simulation:
         # Exponent for isotropic pressure calculations.
         self.isotropic_exp = 100 # [cm²/s²] - stiffness (~100-500 for water)
         # Mass of each particle, scaled by smoothing length cubed.
-        #? Mass proportional to smoothing length cubed
-        self.particle_mass = self.base_density * self.smoothing_length**3   # ! [g] - (originally: 0.01 * self.smoothing_length³)
+        # ? Mass proportional to smoothing length cubed
+        # ? The division by 100 is arbitrary
+        self.particle_mass = self.base_density * self.smoothing_length**3 / 100   # ! [g] - (originally: 0.01 * self.smoothing_length³)
         # Dynamic viscosity coefficient.
-        self.dynamic_visc = 0.01   # [g/(cm·s)] = [Poise] - internal fluid friction
+        self.dynamic_visc = 0.025   # [g/(cm·s)] = [Poise] - internal fluid friction (0.01 for water)
         # Damping coefficient for boundary collisions.
         self.damping_coef = -0.95   # [] - negative for damping
         # Gravitational acceleration (negative for downward).
         self.gravity = -981.0 # [cm/s²]
         ###########################################################################
         # SIM/RENDER TIME PARAMS
+        # ! Slow motion factor for the simulation.
+        # ! Not sure about this one
+        # ! self.slow_motion = 1.0  # [] - slow down factor for motion
         # Time step for rendering frames (1/fps).
         self.fps = 60   # [Hz] = [1/s]
         # Total number of frames to simulate, set by simulate() method
         self.tot_frames = 0
         # Time interval between rendered frames.
-        self.frame_dt = 1.0 / self.fps # [s]
+        self.frame_dt = 1.0 / self.fps # [s] - real time between frames
         # Current simulation time, initialized to 0.0.
         self.sim_time = 0.0
         # Current frame index in the simulation sequence
-        self.current_frame = 0 
-        # Number of simulation steps per rendered frame. Note: 32 is a random choice.
-        self.substeps = int(32 / self.smoothing_length) # !
+        self.current_frame = 0
         # Time between each sub-step of the physical simulation calculation.
-        self.dt = self.frame_dt / self.substeps # ! [s] (originally: 0.01 * self.smoothing_length)
+        self.step_dt = 0.0005 * self.smoothing_length # ! [s]
+        # Number of simulation steps per rendered frame.
+        self.substeps = int(self.frame_dt / self.step_dt) # ! []
         ###########################################################################
         # CONSTANTS
         # Normalization constant for density kernel integration.
@@ -825,10 +829,10 @@ class SPH_Simulation:
                     )
 
                     # kick
-                    wp.launch(kernel=kick, dim=self.n, inputs=[self.v, self.a, self.dt])
+                    wp.launch(kernel=kick, dim=self.n, inputs=[self.v, self.a, self.step_dt])
 
                     # drift
-                    wp.launch(kernel=drift, dim=self.n, inputs=[self.x, self.v, self.dt])
+                    wp.launch(kernel=drift, dim=self.n, inputs=[self.x, self.v, self.step_dt])
 
                     self.move_container(self.get_delta_x(), self.get_delta_z())
 
