@@ -52,7 +52,7 @@ def fifth(x: float):            #
     return x * x * x * x * x    #
 
 @wp.func
-def density_kernel(xyz: wp.vec3, smoothing_length: float):
+def density_kernel(xyz: wp.vec3, h: float):
     """
     Compute the density contribution kernel for SPH (Smoothed Particle Hydrodynamics).
 
@@ -64,7 +64,7 @@ def density_kernel(xyz: wp.vec3, smoothing_length: float):
     ----------
     xyz : wp.vec3
         The relative position (difference) vector between two particles.
-    smoothing_length : float
+    h : float
         The smoothing length (support radius) of the kernel.
         Particles beyond this distance do not contribute to the density calculation.
 
@@ -72,17 +72,17 @@ def density_kernel(xyz: wp.vec3, smoothing_length: float):
     -------
     float
         The kernel value. Returns a non-negative value proportional to the cube of
-        (smoothing_length² - distance_squared) if the distance is within the smoothing
-        length, otherwise returns 0.0.
+        (h² - distance_squared) if the distance is within the smoothing length,
+        otherwise returns 0.0.
     """
     # calculate distance
     distance_squared = wp.dot(xyz, xyz)
 
-    return wp.max(cube(square(smoothing_length) - distance_squared), 0.0)
+    return wp.max(cube(square(h) - distance_squared), 0.0)
 
 @wp.func
 def diff_pressure_kernel(
-    xyz: wp.vec3, pressure: float, neighbor_pressure: float, neighbor_rho: float, smoothing_length: float
+    xyz: wp.vec3, pressure: float, neighbor_pressure: float, neighbor_rho: float, h: float
 ):
     """
     Calculate the pressure gradient contribution from a neighboring particle using SPH kernel.
@@ -100,9 +100,9 @@ def diff_pressure_kernel(
         Pressure value at the neighboring particle.
     neighbor_rho : float
         Density value at the neighboring particle.
-    smoothing_length : float
+    h : float
         Kernel smoothing length (radius of influence).
-    
+
     Returns
     -------
     wp.vec3
@@ -113,17 +113,17 @@ def diff_pressure_kernel(
     # calculate distance
     distance = wp.sqrt(wp.dot(xyz, xyz))
 
-    if distance < smoothing_length:
+    if distance < h:
         # calculate terms of kernel
         term_1 = -xyz / distance
         term_2 = (neighbor_pressure + pressure) / (2.0 * neighbor_rho)
-        term_3 = square(smoothing_length - distance)
+        term_3 = square(h - distance)
         return term_1 * term_2 * term_3
     else:
         return wp.vec3()
 
 @wp.func
-def diff_viscous_kernel(xyz: wp.vec3, v: wp.vec3, neighbor_v: wp.vec3, neighbor_rho: float, smoothing_length: float):
+def diff_viscous_kernel(xyz: wp.vec3, v: wp.vec3, neighbor_v: wp.vec3, neighbor_rho: float, h: float):
     """
     Calculate the viscous force contribution from a neighboring particle using SPH kernel.
 
@@ -142,7 +142,7 @@ def diff_viscous_kernel(xyz: wp.vec3, v: wp.vec3, neighbor_v: wp.vec3, neighbor_
         Density value at the neighboring particle.
     smoothing_length : float
         Kernel smoothing length (radius of influence).
-    
+
     Returns
     -------
     wp.vec3
@@ -155,9 +155,9 @@ def diff_viscous_kernel(xyz: wp.vec3, v: wp.vec3, neighbor_v: wp.vec3, neighbor_
     distance = wp.sqrt(wp.dot(xyz, xyz))
 
     # calculate terms of kernel
-    if distance < smoothing_length:
+    if distance < h:
         term_1 = (neighbor_v - v) / neighbor_rho
-        term_2 = smoothing_length - distance
+        term_2 = h - distance
         return term_1 * term_2
     else:
         return wp.vec3()
@@ -168,7 +168,7 @@ def compute_density(
     particle_x: wp.array(dtype=wp.vec3),
     particle_rho: wp.array(dtype=float),
     density_normalization: float,
-    smoothing_length: float,
+    h: float,
 ):
     """
     Compute the density at each particle position using SPH density summation.
@@ -188,7 +188,7 @@ def compute_density(
         Output array where computed density values are stored for each particle.
     density_normalization : float
         Normalization factor applied to the final density computation.
-    smoothing_length : float
+    h : float
         Kernel smoothing length (radius of influence) defining the neighborhood
         size for density computation.
     """
@@ -205,7 +205,7 @@ def compute_density(
     rho = float(0.0)
 
     # particle contact
-    neighbors = wp.hash_grid_query(grid, x, smoothing_length)
+    neighbors = wp.hash_grid_query(grid, x, h)
 
     # loop through neighbors to compute density
     for index in neighbors:
@@ -213,7 +213,7 @@ def compute_density(
         distance = x - particle_x[index]
 
         # compute kernel derivative
-        rho += density_kernel(distance, smoothing_length)
+        rho += density_kernel(distance, h)
 
     # add external potential
     particle_rho[i] = density_normalization * rho
@@ -230,7 +230,7 @@ def get_acceleration(
     gravity: float,
     pressure_normalization: float,
     viscous_normalization: float,
-    smoothing_length: float,
+    h: float,
 ):
     """
     Calculate the acceleration for each SPH particle due to pressure, viscosity, and external forces.
@@ -262,7 +262,7 @@ def get_acceleration(
         Normalization factor applied to the pressure force contribution.
     viscous_normalization : float
         Normalization factor applied to the viscous force contribution.
-    smoothing_length : float
+    h : float
         Kernel smoothing length defining the radius of influence for particle interactions.
     """
 
@@ -282,7 +282,7 @@ def get_acceleration(
     viscous_force = wp.vec3()
 
     # particle contact
-    neighbors = wp.hash_grid_query(grid, x, smoothing_length)
+    neighbors = wp.hash_grid_query(grid, x, h)
 
     # loop through neighbors to compute acceleration
     for index in neighbors:
@@ -299,11 +299,11 @@ def get_acceleration(
 
             # calculate pressure force
             pressure_force += diff_pressure_kernel(
-                relative_position, pressure, neighbor_pressure, neighbor_rho, smoothing_length
+                relative_position, pressure, neighbor_pressure, neighbor_rho, h
             )
 
             # compute kernel derivative
-            viscous_force += diff_viscous_kernel(relative_position, v, neighbor_v, neighbor_rho, smoothing_length)
+            viscous_force += diff_viscous_kernel(relative_position, v, neighbor_v, neighbor_rho, h)
 
     # sum all forces
     force = pressure_normalization * pressure_force + viscous_normalization * viscous_force
@@ -494,7 +494,7 @@ def drift(particle_x: wp.array(dtype=wp.vec3), particle_v: wp.array(dtype=wp.vec
 
 @wp.kernel
 def initialize_particles(
-    particle_x: wp.array(dtype=wp.vec3), smoothing_length: float,
+    particle_x: wp.array(dtype=wp.vec3), dp: float,
     width: float, height: float, length: float,
     x0: float, y0: float, z0: float
 ):
@@ -510,8 +510,8 @@ def initialize_particles(
     particle_x : wp.array(dtype=wp.vec3)
         Output array to store particle positions. Must be pre-allocated with sufficient
         size to hold all particles in the grid.
-    smoothing_length : float
-        SPH kernel smoothing length, used as the base spacing between particles in the grid.
+    dp : float
+        Inter-particle distance (spacing) in the simulation.
     width : float
         Width of the fluid domain in the x-direction.
     height : float
@@ -529,19 +529,19 @@ def initialize_particles(
     tid = wp.tid()
 
     # grid size
-    nr_x = wp.int32(width  / smoothing_length)
-    nr_y = wp.int32(height / smoothing_length)
-    nr_z = wp.int32(length / smoothing_length)
+    nr_x = wp.int32(width  / dp)
+    nr_y = wp.int32(height / dp)
+    nr_z = wp.int32(length / dp)
 
     # calculate particle position
     z = wp.float(tid % nr_z)
     y = wp.float((tid // nr_z) % nr_y)
     x = wp.float((tid // (nr_z * nr_y)) % nr_x)
-    pos = smoothing_length * wp.vec3(x, y, z) + wp.vec3(x0, y0, z0)
+    pos = dp * wp.vec3(x, y, z) + wp.vec3(x0, y0, z0)
 
     # add small jitter
     state = wp.rand_init(123, tid)
-    pos = pos + 0.001 * smoothing_length * wp.vec3(wp.randn(state), wp.randn(state), wp.randn(state))
+    pos = pos + 0.001 * dp * wp.vec3(wp.randn(state), wp.randn(state), wp.randn(state))
 
     # set position
     particle_x[tid] = pos
@@ -566,51 +566,60 @@ class SPH_Simulation:
         self.verbose = verbose        
         ###########################################################################
         # FLUID SIMULATION PARAMS (SPATIAL)
+        # Inter-particle distance (initial spacing between adjacent particles).
+        # Sets the resolution of the simulation: lower values = more particles = higher accuracy.
+        # ? Particle count: 1/(dp)³ per unit volume
+        # ? Each particle typically occupies a volume of dp³
+        # ? Default: 0.1 cm. Smaller values raise the computational cost sharply
+        # ? Typical values: 0.5 cm (fast), 0.25 cm (medium), 0.1 cm (slow), 0.05 cm (very slow)
+        self.dp = 0.1  # [cm] - inter-particle distance
+        # Coefficient used to derive the smoothing length from the particle parameters.
+        # Controls the width of the SPH kernel: h = coefh × √(3 × dp²)
+        # ? Typical values for 3D: 1.2-1.3
+        # ? Larger coefh → wider kernels → more smoothing → more neighbours to evaluate
+        self.coefh = 1.3  # []
         # SPH kernel smoothing length (radius of influence for particle interactions).
-        # ? Particle count 1/(smoothing_length)³ per cube-unit.
-        # ? In other terms, each particle typically occupies a volume of smoothing_length³.
-        # ? Default: 0.8. Lower => more precision but much slower
-        # ? 1/(num_particles_for_each_cm_cubed**(1/3))
-        self.smoothing_length = 1/(10**(1/3)) # [cm]
+        # ? Derived automatically from dp and coefh with the formula: h = coefh × √(3 × dp²)
+        # ? With coefh=1.3 this gives h ≈ 2.25 × dp
+        # ? Particles interact only if they are closer than h to each other.
+        self.h = self.coefh * (3.0 * self.dp**2)**0.5  # [cm]
         # Initial position offsets for particle placement.
         self.x0 = 0.0   # [cm]
         self.y0 = 0.0   # [cm]
         self.z0 = 0.0   # [cm]
         # Fluid block dimensions.
-        self.width = 40.0   # [cm] - x direction
-        self.height = 20.0  # [cm] - y direction
-        self.length = 20.0  # [cm] - z direction
+        self.width = 12.0   # [cm] - x direction
+        self.height = 2.0   # [cm] - y direction
+        self.length = 6.1   # [cm] - z direction
         # Total number of particles in the simulation.
-        self.n = int(self.height * self.width * self.length / (self.smoothing_length**3))
+        self.n = int(self.height * self.width * self.length / (self.dp**3))
         # Boundaries parameters
         self.xl = 0.0   # [cm] - left boundary x at y=0
-        self.xr = 40.0  # [cm] - right boundary x at y=0
-        self.xs = 2.0   # []   - x-axis wall slope
+        self.xr = 12.0  # [cm] - right boundary x at y=0
+        self.xs = 1e4   # []   - x-axis wall slope
         self.yb = 0.0   # [cm] - bottom boundary y
         self.zl = 0.0   # [cm] - left boundary z at y=0
-        self.zr = 20.0  # [cm] - right boundary z at y=0
-        self.zs = 4.0   # []   - z-axis wall slope
+        self.zr = 6.1   # [cm] - right boundary z at y=0
+        self.zs = 1e4   # []   - z-axis wall slope
+        # ? with slope 1e4 the walls are almost vertical
+        # ? at height y0, the error in x due to slope is y0/1e4
         ###########################################################################
         # FLUID SIMULATION PARAMS (PHYSICAL)
         # Reference density of the fluid.
         self.base_density = 1.0 # [g/cm³] - water at standard conditions
         # Exponent for isotropic pressure calculations.
         self.isotropic_exp = 100 # [cm²/s²] - stiffness (~100-500 for water)
-        # Mass of each particle, scaled by smoothing length cubed.
-        # ? Mass proportional to smoothing length cubed
-        # ? The division by 100 is arbitrary
-        self.particle_mass = self.base_density * self.smoothing_length**3 / 100   # ! [g] - (originally: 0.01 * self.smoothing_length³)
+        # Mass of each particle.
+        # ? Mass = density × volume = base_density × dp³
+        self.particle_mass = self.base_density * self.dp**3 # [g]
         # Dynamic viscosity coefficient.
-        self.dynamic_visc = 0.025   # [g/(cm·s)] = [Poise] - internal fluid friction (0.01 for water)
+        self.dynamic_visc = 0.01   # [g/(cm·s)] = [Poise] - internal fluid friction (0.01 for water)
         # Damping coefficient for boundary collisions.
         self.damping_coef = -0.95   # [] - negative for damping
         # Gravitational acceleration (negative for downward).
         self.gravity = -981.0 # [cm/s²]
         ###########################################################################
         # SIM/RENDER TIME PARAMS
-        # ! Slow motion factor for the simulation.
-        # ! Not sure about this one
-        # ! self.slow_motion = 1.0  # [] - slow down factor for motion
         # Time step for rendering frames (1/fps).
         self.fps = 60   # [Hz] = [1/s]
         # Total number of frames to simulate, set by simulate() method
@@ -621,21 +630,21 @@ class SPH_Simulation:
         self.sim_time = 0.0
         # Current frame index in the simulation sequence
         self.current_frame = 0
-        # Time between each sub-step of the physical simulation calculation.
-        self.step_dt = 0.0005 * self.smoothing_length # ! [s]
         # Number of simulation steps per rendered frame.
-        self.substeps = int(self.frame_dt / self.step_dt) # ! []
+        self.substeps = 420 # [] - number of sim steps per frame
+        # Time between each sub-step of the physical simulation calculation.
+        self.step_dt = self.frame_dt / self.substeps  # [s] - time per sim step
         ###########################################################################
         # CONSTANTS
         # Normalization constant for density kernel integration.
         self.density_normalization = (315.0 * self.particle_mass) / (
-            64.0 * np.pi * self.smoothing_length**9
+            64.0 * np.pi * self.h**9
         )
         # Normalization constant for pressure gradient kernel.
-        self.pressure_normalization = -(45.0 * self.particle_mass) / (np.pi * self.smoothing_length**6)
+        self.pressure_normalization = -(45.0 * self.particle_mass) / (np.pi * self.h**6)
         # Normalization constant for viscosity kernel.
         self.viscous_normalization = (45.0 * self.dynamic_visc * self.particle_mass) / (
-            np.pi * self.smoothing_length**6
+            np.pi * self.h**6
         )
         ###########################################################################
         # ALLOCATE ARRAYS
@@ -652,14 +661,117 @@ class SPH_Simulation:
         wp.launch(
             kernel=initialize_particles,
             dim=self.n,
-            inputs=[self.x, self.smoothing_length, self.width, self.height, self.length, self.x0, self.y0, self.z0],
+            inputs=[self.x, self.dp, self.width, self.height, self.length, self.x0, self.y0, self.z0],
         )
+        # Store maximum heights for analysis/visualization
+        self.max_heights = []
         ###########################################################################
-        # HASH GRID
-        # create hash array
-        grid_size = int(self.height / (4.0 * self.smoothing_length))
-        # Spatial hash grid for efficient neighbor search.
-        self.grid = wp.HashGrid(grid_size, grid_size, grid_size)
+        # HASH GRID CONFIGURATION
+        # 
+        # The HashGrid is a spatial acceleration structure that maps 3D space into
+        # a finite hash table for efficient neighbor queries.
+        # 
+        # Two independent parameters control its behavior:
+        # 
+        # 1. CELL SIZE (radius parameter in build()):
+        #    - Set to h (smoothing length)
+        #    - Defines the physical size of spatial cells: each cell is a cube of size h×h×h
+        #    - Particles interact only within distance h, so cells of size h are optimal
+        # 
+        # 2. HASH TABLE SIZE (dim_x, dim_y, dim_z in constructor):
+        #    - Number of buckets in the hash table: dim_x × dim_y × dim_z
+        #    - Multiple cells map to the same bucket (hash collisions)
+        #    - Trade-off: more buckets = less collisions but more memory
+        # 
+        # Grid Size Selection Strategy:
+        # - We divide space into "macro-cells" of size (factor×h) to determine bucket count
+        # - Factor of 4 means ~64 physical cells map to 1 bucket (acceptable collision rate)
+        # - Larger factor (5-6) = fewer buckets, more collisions, less memory
+        # - Smaller factor (2-3) = more buckets, fewer collisions, more memory
+        # 
+        # Domain Coverage:
+        # - Based on CONTAINER GEOMETRY at maximum fluid height (with sloshing)
+        # - Container has slanted walls that widen with height:
+        #   * x-width at height y: (xr - xl) + 2×(y/xs)
+        #   * z-depth at height y: (zr - zl) + 2×(y/zs)
+        # - We estimate max fluid height considering sloshing and use container dimensions there
+        # 
+        # Note: The hash grid has NO spatial boundaries. It maps any coordinate in
+        # infinite 3D space into the finite hash table. Grid dimensions should match
+        # the EXTENT of the fluid distribution based on container shape.
+
+        # Hash grid cell size factor (controls memory vs collision trade-off)
+        # Typical values: 3.0 (more memory), 4.0 (balanced), 5.0 (less memory)
+        self.hash_grid_factor = 4.0
+
+        # Sloshing factor: fluid can rise higher than initial fill level
+        # During violent sloshing, fluid height can increase by 2-3×
+        self.sloshing_factor = 3.0
+
+        # Calculate maximum fluid height considering sloshing
+        max_fluid_height = self.height * self.sloshing_factor  # [cm]
+
+        # Calculate container dimensions at maximum fluid height
+        # Container widens due to slanted walls: width(y) = base_width + 2×(y/slope)
+        container_width_at_max_height = (self.xr - self.xl) # + 2.0 * (max_fluid_height / self.xs)
+        container_depth_at_max_height = (self.zr - self.zl) # + 2.0 * (max_fluid_height / self.zs)
+
+        # Use container dimensions at max height as fluid extent
+        # (fluid conforms to container shape)
+        domain_extent_x = container_width_at_max_height   # [cm]
+        domain_extent_y = max_fluid_height                # [cm]
+        domain_extent_z = container_depth_at_max_height   # [cm]
+
+        # Calculate anisotropic grid dimensions based on fluid extent in container
+        # Each dimension is sized to cover the extent with macro-cells of size (factor × h)
+        grid_dim_x = int(domain_extent_x / (self.hash_grid_factor * self.h))
+        grid_dim_y = int(domain_extent_y / (self.hash_grid_factor * self.h))
+        grid_dim_z = int(domain_extent_z / (self.hash_grid_factor * self.h))
+
+        # Ensure minimum grid dimensions
+        grid_dim_x = max(grid_dim_x, 1)
+        grid_dim_y = max(grid_dim_y, 1)
+        grid_dim_z = max(grid_dim_z, 1)
+
+        # Total hash table buckets
+        total_buckets = grid_dim_x * grid_dim_y * grid_dim_z
+
+        if self.verbose:
+            print(f"\n=== Hash Grid Configuration ===")
+            print(f"Smoothing length h: {self.h:.4f} cm")
+            print(f"Hash grid factor: {self.hash_grid_factor}")
+            print(f"Sloshing factor: {self.sloshing_factor}")
+            print(f"Macro-cell size: {self.hash_grid_factor * self.h:.4f} cm")
+            print(f"\nContainer geometry (slanted walls):")
+            print(f"  At y=0 (bottom):  width={self.xr - self.xl:.1f} cm, depth={self.zr - self.zl:.1f} cm")
+            print(f"  At y={max_fluid_height:.1f} (max): width={container_width_at_max_height:.1f} cm, depth={container_depth_at_max_height:.1f} cm")
+            print(f"\nFluid extent approximation (parallelepiped):")
+            print(f"  X={domain_extent_x:.1f} cm, Y={domain_extent_y:.1f} cm, Z={domain_extent_z:.1f} cm")
+            print(f"\nHash grid dimensions: {grid_dim_x} × {grid_dim_y} × {grid_dim_z}")
+            print(f"Total hash buckets: {total_buckets:,}")
+            
+            # Estimate average particles per physical cell
+            volume_per_cell = self.h ** 3
+            initial_particle_density = self.n / (self.width * self.height * self.length)
+            particles_per_physical_cell = volume_per_cell * initial_particle_density
+            print(f"\nParticle distribution:")
+            print(f"  Particles per physical cell (h³): {particles_per_physical_cell:.1f}")
+            
+            # Estimate theoretical cells in fluid domain
+            theoretical_cells_x = int(domain_extent_x / self.h)
+            theoretical_cells_y = int(domain_extent_y / self.h)
+            theoretical_cells_z = int(domain_extent_z / self.h)
+            total_theoretical_cells = theoretical_cells_x * theoretical_cells_y * theoretical_cells_z
+            collision_factor = total_theoretical_cells / total_buckets if total_buckets > 0 else 0
+            print(f"  Theoretical physical cells in domain: {total_theoretical_cells:,}")
+            print(f"  Average cells per bucket (collision factor): {collision_factor:.1f}")
+            print(f"\nNote: Container movement does NOT affect grid sizing.")
+            print(f"      Grid covers fluid extent based on container shape, not position.")
+            print("=" * 60)
+
+        # Create spatial hash grid for efficient neighbor search
+        # This maps infinite 3D space into a finite hash table
+        self.grid = wp.HashGrid(grid_dim_x, grid_dim_y, grid_dim_z)
         ###########################################################################
         # RENDERER
         # USD renderer for visualization, or None if no stage_path provided.
@@ -692,32 +804,62 @@ class SPH_Simulation:
     
     def get_delta_x(self):
         """
-        Calculate the x-axis displacement for the current frame.
-
-        This method computes how much the container should move along the x-axis
-        based on the current simulation time.
-
+        Calculate x-axis displacement for current frame based on acceleration profile.
+        
+        Motion profile (heavy sloshing, single sequence):
+        - Phase 0 (0.0 - 0.75s): Settling time (stationary)
+        - Phase 1 (0.75 - 1.5s): +160 cm/s² acceleration
+        - Phase 2 (1.5 - 1.75s): 0 cm/s² (constant velocity)
+        - Phase 3 (1.75 - 2.25s): -240 cm/s² deceleration
+        - Phase 4 (2.25s - end): 0 cm/s² (stationary)
+        
         Returns
         -------
         float
-            The x-axis displacement for this frame.
-
-        Notes
-        -----
-        Currently the container remains stationary during the initial phase (first 20% of frames)
-        to allow the fluid to settle, then begins moving at constant velocity.
+            Container displacement in [cm] for this frame
         """
-        # self.sim_time
-        # self.frame_dt
+        # Phase boundaries (absolute time)
+        t_settling = 0.75 # [s] - end of settling phase
+        t1 = 1.5          # [s] - end of acceleration phase
+        t2 = 1.75         # [s] - end of constant velocity phase
+        t3 = 2.25         # [s] - end of deceleration phase
+
+        # Acceleration values
+        a1 = 160.0   # [cm/s²] - positive acceleration
+        a3 = -240.0  # [cm/s²] - negative acceleration
         
-        if self.current_frame <= self.tot_frames * 0.2:
-            return 0.0
-        elif self.current_frame <= self.tot_frames * 0.5:
-            return 0.025
-        elif self.current_frame <= self.tot_frames * 0.8:
-            return 0.0125
-        elif self.current_frame <= self.tot_frames * 1.0:
-            return 0.0
+        t = self.sim_time
+        
+        # Phase 0: Settling (stationary)
+        if t < t_settling:
+            velocity = 0.0
+            
+        # Phase 1: Positive acceleration
+        elif t < t1:
+            # v(t) = a1 * (t - t_settling)
+            # Starting from rest at t = t_settling
+            velocity = a1 * (t - t_settling)
+            
+        # Phase 2: Constant velocity
+        elif t < t2:
+            # v = v_peak (reached at end of phase 1)
+            v_peak = a1 * (t1 - t_settling)  # = 160 * 0.75 = 120 cm/s
+            velocity = v_peak
+            
+        # Phase 3: Negative acceleration (braking)
+        elif t < t3:
+            # v(t) = v_peak + a3 * (t - t2)
+            v_peak = a1 * (t1 - t_settling)  # = 120 cm/s
+            velocity = v_peak + a3 * (t - t2)
+            
+        # Phase 4: Rest (stationary)
+        else:
+            velocity = 0.0
+        
+        # Displacement for this frame: Δx = v * Δt
+        displacement = velocity * self.frame_dt  # [cm]
+        
+        return displacement
     
     def get_delta_z(self):
         """
@@ -743,6 +885,20 @@ class SPH_Simulation:
     def get_delta_y(self):
         pass
 
+    def get_max_fluid_height(self):
+        """
+        Calculate the maximum y-coordinate (height) of all fluid particles.
+        
+        Returns
+        -------
+        float
+            Maximum height reached by any particle in [cm]
+        """
+        # Copy particle positions to CPU and find max y coordinate
+        positions = self.x.numpy()  # Shape: (n, 3)
+        max_y = np.max(positions[:, 1])  # Get max of y-coordinates (index 1)
+        return max_y
+
     def simulate(self, num_frames=600):
         """
         Run the SPH simulation for a specified number of frames.
@@ -762,11 +918,21 @@ class SPH_Simulation:
         for frame in range(num_frames):
             self.current_frame = frame
             print(f"Frame {frame + 1}/{num_frames}")
-            self.render()
             self.step()
+            self.render()
+            self.move_container(self.get_delta_x(), self.get_delta_z())
+
 
         if self.renderer:
             self.renderer.save()
+        
+        import csv
+        with open('max_heights.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Frame', 'Time [s]', 'Max Height [cm]'])
+            for i, h in enumerate(self.max_heights):
+                writer.writerow([i, i * self.frame_dt, h])
+        print(f"Max heights saved to max_heights.csv")
         
     def step(self):
         """
@@ -792,14 +958,14 @@ class SPH_Simulation:
             for _ in range(self.substeps):
                 with wp.ScopedTimer("grid build", active=self.verbose):
                     # build grid
-                    self.grid.build(self.x, self.smoothing_length)
+                    self.grid.build(self.x, self.h)
 
                 with wp.ScopedTimer("forces", active=self.verbose):
                     # compute density of points
                     wp.launch(
                         kernel=compute_density,
                         dim=self.n,
-                        inputs=[self.grid.id, self.x, self.rho, self.density_normalization, self.smoothing_length],
+                        inputs=[self.grid.id, self.x, self.rho, self.density_normalization, self.h],
                     )
 
                     # get new acceleration
@@ -817,7 +983,7 @@ class SPH_Simulation:
                             self.gravity,
                             self.pressure_normalization,
                             self.viscous_normalization,
-                            self.smoothing_length,
+                            self.h,
                         ],
                     )
 
@@ -834,7 +1000,8 @@ class SPH_Simulation:
                     # drift
                     wp.launch(kernel=drift, dim=self.n, inputs=[self.x, self.v, self.step_dt])
 
-                    self.move_container(self.get_delta_x(), self.get_delta_z())
+            max_height = self.get_max_fluid_height()
+            self.max_heights.append(max_height)
 
             self.sim_time += self.frame_dt
 
@@ -854,7 +1021,7 @@ class SPH_Simulation:
         with wp.ScopedTimer("render"):
             self.renderer.begin_frame(self.sim_time)
             self.renderer.render_points(
-                points=self.x.numpy(), radius=self.smoothing_length, name="points", colors=(0.0, 0.4, 0.8)
+                points=self.x.numpy(), radius=self.h, name="points", colors=(0.0, 0.4, 0.8)
             )
             self.renderer.end_frame()
 
@@ -870,7 +1037,7 @@ if __name__ == "__main__":
         default="sph_sim.usd",
         help="Path to the output USD file.",
     )
-    parser.add_argument("--num_frames", type=int, default=600, help="Total number of frames.")
+    parser.add_argument("--num_frames", type=int, default=240, help="Total number of frames.")
     parser.add_argument("--verbose", action="store_true", help="Print out additional status messages during execution.")
 
     args = parser.parse_known_args()[0]
