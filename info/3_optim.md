@@ -1,146 +1,146 @@
 
 # Examples/optim
 
-## bounce - Ottimizzazione Differenziabile Traiettorie Balistiche
+## bounce - Differentiable Optimisation of Ballistic Trajectories
 
-**Fenomeno simulato:**
-Ottimizza la velocità iniziale di una particella tramite gradient descent affinché colpisca un target dopo rimbalzi su ostacoli. Sistema di controllo inverso che apprende automaticamente parametri balistici ottimali.
+**What it simulates:**
+Optimises the initial velocity of a particle through gradient descent so that it hits a target after bouncing off obstacles. An inverse control problem that learns the optimal ballistic parameters automatically.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Tape()` - Sistema automatic differentiation per calcolo gradienti end-to-end
-• `wp.sim.ModelBuilder()` - Costruzione scene fisiche con `requires_grad=True`
-• `wp.sim.SemiImplicitIntegrator()` - Integratore fisico differenziabile 
-• `.backward()` method - Backpropagation automatica attraverso simulazione fisica
-• `wp.sim.collide()` - Sistema contatti differenziabile con restituzione
-• CUDA graph capture - Pre-compilazione forward+backward pass completo
+**Warp features used:**
+• `wp.Tape()` - Automatic differentiation system for end-to-end gradient computation
+• `wp.sim.ModelBuilder()` - Physics scene construction with `requires_grad=True`
+• `wp.sim.SemiImplicitIntegrator()` - Differentiable physics integrator 
+• `.backward()` method - Automatic backpropagation through the physics simulation
+• `wp.sim.collide()` - Differentiable contact system with restitution
+• CUDA graph capture - Pre-compilation of the full forward+backward pass
 
-**Capacità chiave:**
-Warp implementa differenziazione automatica attraverso intera pipeline di simulazione fisica, permettendo ottimizzazione diretta di parametri fisici. Il sistema tape/gradient è completamente GPU-nativo e compatibile con frameworks ML standard.
+**Key capability:**
+Warp implements automatic differentiation through the entire physics simulation pipeline, allowing physical parameters to be optimised directly. The tape/gradient system is fully GPU-native and compatible with standard ML frameworks.
 
-## cloth throw - Ottimizzazione Differenziabile Dinamiche Tessuto
+## cloth throw - Differentiable Optimisation of Cloth Dynamics
 
-**Fenomeno simulato:**
-Ottimizza le velocità iniziali di un tessuto tramite gradient descent affinché il centro di massa colpisca un target specifico. Sistema di controllo inverso per dinamiche deformabili complesse con aerodinamica.
+**What it simulates:**
+Optimises the initial velocities of a piece of cloth through gradient descent so that its centre of mass hits a specific target. An inverse control problem for complex deformable dynamics with aerodynamics.
 
-**Funzionalità Warp utilizzate:**
-• `wp.sim.ModelBuilder.add_cloth_grid()` - Generazione automatica mesh tessuto con vincoli elastici
-• Parametri fisici cloth - `tri_ke` (elasticità), `tri_ka` (area), `tri_lift/drag` (aerodinamica)
-• `wp.atomic_add()` - Calcolo parallelo centro di massa tramite riduzione atomica
-• Integrazione differenziabile - Forward/backward pass attraverso dinamiche cloth complete
-• `requires_grad=True` states - Stati simulazione con supporto gradiente completo
+**Warp features used:**
+• `wp.sim.ModelBuilder.add_cloth_grid()` - Automatic cloth mesh generation with elastic constraints
+• Cloth physical parameters - `tri_ke` (elasticity), `tri_ka` (area), `tri_lift/drag` (aerodynamics)
+• `wp.atomic_add()` - Parallel centre-of-mass computation through atomic reduction
+• Differentiable integration - Forward/backward pass through the complete cloth dynamics
+• `requires_grad=True` states - Simulation states with full gradient support
 
-**Capacità chiave:**
-Warp gestisce automaticamente la differenziazione attraverso fisica deformabile complessa, includendo forze aerodinamiche e vincoli elastici. Il sistema permette controllo intelligente di oggetti soft-body multi-particella con ottimizzazione end-to-end.
+**Key capability:**
+Warp handles differentiation through complex deformable physics automatically, aerodynamic forces and elastic constraints included. The system allows intelligent control of multi-particle soft-body objects with end-to-end optimisation.
 
-## diffray - Ray Tracing Differenziabile per Inverse Rendering
+## diffray - Differentiable Ray Tracing for Inverse Rendering
 
-**Fenomeno simulato:**
-Ray tracer completamente differenziabile che ottimizza parametri di scena (rotazione mesh, posizioni vertici, texture) per matching con immagini target. Implementa shading lambertiano, texture mapping, anti-aliasing e calcolo normali per rendering fotorealistico.
+**What it simulates:**
+A fully differentiable ray tracer that optimises scene parameters (mesh rotation, vertex positions, textures) to match target images. Implements Lambertian shading, texture mapping, anti-aliasing and normal computation for photorealistic rendering.
 
-**Funzionalità Warp utilizzate:**
-• `wp.mesh_query_ray()` - Ray-mesh intersection con coordinate baricentriche
-• Interpolazione texture differenziabile - Sampling bilineare con gradienti automatici
-• `wp.atomic_add()` - Calcolo parallelo normali per-vertex tramite riduzione atomica
-• `wp.optim.SGD` - Optimizer integrato per parametri rendering
-• Anti-aliasing supersampling - Downsampling con media pesata differenziabile
-• Multiple directional lights - Sistema illuminazione con intensità/direzioni ottimizzabili
+**Warp features used:**
+• `wp.mesh_query_ray()` - Ray-mesh intersection with barycentric coordinates
+• Differentiable texture interpolation - Bilinear sampling with automatic gradients
+• `wp.atomic_add()` - Parallel per-vertex normal computation through atomic reduction
+• `wp.optim.SGD` - Built-in optimiser for rendering parameters
+• Anti-aliasing supersampling - Downsampling with a differentiable weighted average
+• Multiple directional lights - Lighting system with optimisable intensities/directions
 
-**Capacità chiave:**
-Warp implementa un intero pipeline di rendering differenziabile end-to-end, permettendo inverse rendering e ricostruzione 3D da immagini. Il sistema supporta ottimizzazione simultanea di geometria, materiali e illuminazione per applicazioni di computer vision avanzata.
+**Key capability:**
+Warp implements an entire end-to-end differentiable rendering pipeline, enabling inverse rendering and 3D reconstruction from images. The system supports simultaneous optimisation of geometry, materials and lighting for advanced computer vision applications.
 
-## drone - Controllo Model Predictive Control (MPC) per Drone Quadricottero
+## drone - Model Predictive Control (MPC) for a Quadcopter Drone
 
-**Fenomeno simulato:**
-Implementa controllo Model Predictive Control per drone quadricottero che ottimizza traiettorie in tempo reale per raggiungere targets evitando ostacoli. Sistema di controllo avanzato con sampling gaussiano e ottimizzazione multi-obiettivo.
+**What it simulates:**
+Implements Model Predictive Control for a quadcopter drone, optimising trajectories in real time to reach targets while avoiding obstacles. An advanced control system with Gaussian sampling and multi-objective optimisation.
 
-**Funzionalità Warp utilizzate:**
-• `@wp.struct` - Strutture dati custom per propeller e parametri drone
-• Sampling gaussiano parallelo - Generazione noise controllato per exploration
-• Multiple cost functions - Penalità pesate per posizione, velocità, controllo, collisioni
-• `wp.optim.SGD` - Optimizer integrato per traiettorie ottimali MPC
-• SDF collision detection - Rilevamento collisioni con primitive geometriche multiple
-• Rollout simulations - Simulazioni parallele multiple per valutazione traiettorie
-• Control interpolation - Interpolazione lineare smooth tra waypoints controllo
+**Warp features used:**
+• `@wp.struct` - Custom data structures for propeller and drone parameters
+• Parallel Gaussian sampling - Controlled noise generation for exploration
+• Multiple cost functions - Weighted penalties for position, velocity, control and collisions
+• `wp.optim.SGD` - Built-in optimiser for optimal MPC trajectories
+• SDF collision detection - Collision detection against multiple geometric primitives
+• Rollout simulations - Multiple parallel simulations for trajectory evaluation
+• Control interpolation - Smooth linear interpolation between control waypoints
 
-**Capacità chiave:**
-Warp gestisce sistemi di controllo robotico completi con ottimizzazione differenziabile real-time. Il framework integra fisica, ottimizzazione e rendering per sviluppo rapido di controllori avanzati per sistemi multi-body dinamici.
+**Key capability:**
+Warp handles complete robotic control systems with real-time differentiable optimisation. The framework integrates physics, optimisation and rendering for rapid development of advanced controllers for dynamic multi-body systems.
 
-## inverse kinematics - Cinematica Inversa per Catene Articolate
+## inverse kinematics - Inverse Kinematics for Articulated Chains
 
-**Fenomeno simulato:**
-Risolve cinematica inversa per braccio robotico articolato usando gradient descent per posizionare end-effector su target. Ottimizza angoli giunti per raggiungere posizioni obiettivo nello spazio cartesiano.
+**What it simulates:**
+Solves inverse kinematics for an articulated robotic arm using gradient descent to place the end-effector on a target. Optimises joint angles to reach goal positions in Cartesian space.
 
-**Funzionalità Warp utilizzate:**
-• `wp.sim.eval_fk()` - Forward kinematics differenziabile per catene articolate
-• `builder.add_joint_revolute()` - Creazione giunti rotoidali con limiti angolari
-• `wp.Tape()` - Automatic differentiation attraverso cinematica diretta
-• `requires_grad=True` - Parametri giunti ottimizzabili automaticamente
-• Joint limits enforcement - Vincoli automatici su range movimento articolazioni
+**Warp features used:**
+• `wp.sim.eval_fk()` - Differentiable forward kinematics for articulated chains
+• `builder.add_joint_revolute()` - Creation of revolute joints with angular limits
+• `wp.Tape()` - Automatic differentiation through forward kinematics
+• `requires_grad=True` - Joint parameters optimised automatically
+• Joint limits enforcement - Automatic constraints on the range of motion
 
-**Capacità chiave:**
-Warp implementa cinematica differenziabile completa che trasforma problemi IK complessi in ottimizzazione gradient-based. Il sistema gestisce automaticamente vincoli articolari e calcolo jacobiani per controllo robotico preciso.
+**Key capability:**
+Warp implements fully differentiable kinematics, turning complex IK problems into gradient-based optimisation. The system handles joint constraints and Jacobian computation automatically for precise robotic control.
 
-## spring cage - Ottimizzazione Differenziabile Sistemi Molla-Massa
+## spring cage - Differentiable Optimisation of Spring-Mass Systems
 
-**Fenomeno simulato:**
-Una particella collegata tramite molle a punti fissi di una "gabbia" spaziale. Ottimizza le lunghezze di riposo delle molle per guidare la particella verso una posizione target specifica attraverso gradient descent.
+**What it simulates:**
+A particle connected by springs to the fixed points of a spatial "cage". Optimises the rest lengths of the springs to drive the particle towards a specific target position through gradient descent.
 
-**Funzionalità Warp utilizzate:**
-• `builder.add_spring()` - Creazione vincoli elastici con stiffness/damping configurabili
-• `requires_grad=True` model - Abilita differenziazione automatica completa della fisica
-• `model.spring_rest_length.grad` - Accesso diretto ai gradienti parametri fisici
-• `wp.SemiImplicitIntegrator()` - Integratore numerico completamente differenziabile
-• Multiple simulation states - Storia completa stati per backpropagation temporale
-• CUDA graph optimization - Pre-compilazione forward+backward pass integrato
+**Warp features used:**
+• `builder.add_spring()` - Creation of elastic constraints with configurable stiffness/damping
+• `requires_grad=True` model - Enables full automatic differentiation of the physics
+• `model.spring_rest_length.grad` - Direct access to the gradients of physical parameters
+• `wp.SemiImplicitIntegrator()` - Fully differentiable numerical integrator
+• Multiple simulation states - Complete state history for backpropagation through time
+• CUDA graph optimisation - Pre-compilation of the integrated forward+backward pass
 
-**Capacità chiave:**
-Warp trasforma problemi di controllo fisico in ottimizzazione differenziabile end-to-end. Il framework calcola automaticamente gradienti attraverso simulazioni dinamiche complesse, permettendo tuning intelligente di parametri fisici per comportamenti desiderati.
+**Key capability:**
+Warp turns physical control problems into end-to-end differentiable optimisation. The framework computes gradients through complex dynamic simulations automatically, allowing intelligent tuning of physical parameters towards desired behaviours.
 
-## trajectory - Ottimizzazione Differenziabile Traiettorie di Controllo
+## trajectory - Differentiable Optimisation of Control Trajectories
 
-**Fenomeno simulato:**
-Ottimizza sequenze di coppia/forze applicate a un corpo rigido sferico per seguire una traiettoria di riferimento circolare. Sistema di controllo ottimale che apprende automaticamente gli input necessari per tracking preciso.
+**What it simulates:**
+Optimises the sequence of torques/forces applied to a spherical rigid body so that it follows a circular reference trajectory. An optimal control problem that learns the inputs required for precise tracking automatically.
 
-**Funzionalità Warp utilizzate:**
-• `warp.optim.Adam` - Optimizer Adam integrato per ottimizzazione differenziabile avanzata
-• `wp.array2d()` - Arrays bidimensionali per memorizzazione stati e traiettorie target
-• `wp.spatial_vector` - Vettori spaziali per applicazione forze/momenti a corpi rigidi
-• Loss functions custom - Kernel L2 per calcolo errore tra traiettoria attuale e riferimento
-• `wp.SemiImplicitIntegrator()` - Integratore fisico completamente differenziabile
+**Warp features used:**
+• `warp.optim.Adam` - Built-in Adam optimiser for advanced differentiable optimisation
+• `wp.array2d()` - Two-dimensional arrays storing states and target trajectories
+• `wp.spatial_vector` - Spatial vectors applying forces/moments to rigid bodies
+• Custom loss functions - L2 kernel computing the error between actual and reference trajectory
+• `wp.SemiImplicitIntegrator()` - Fully differentiable physics integrator
 
-**Capacità chiave:**
-Warp combina optimizers ML standard con fisica differenziabile per controllo ottimale automatico. Il sistema calcola gradienti attraverso simulazioni dinamiche complete, permettendo apprendimento diretto di politiche di controllo per task di tracking complessi.
+**Key capability:**
+Warp combines standard ML optimisers with differentiable physics for automatic optimal control. The system computes gradients through complete dynamic simulations, allowing control policies to be learned directly for complex tracking tasks.
 
-## soft body properties - Ottimizzazione Differenziabile Materiali Soft-Body FEM
+## soft body properties - Differentiable Optimisation of FEM Soft-Body Materials
 
-**Fenomeno simulato:**
-Ottimizza parametri materiali (parametri di Lamé μ e λ) di un corpo deformabile discretizzato con tetraedri FEM per farlo rimbalzare contro ostacoli e raggiungere un target. Controllo inverso di proprietà elastiche per comportamenti dinamici desiderati.
+**What it simulates:**
+Optimises the material parameters (Lamé parameters μ and λ) of a deformable body discretised with FEM tetrahedra, making it bounce off obstacles and reach a target. Inverse control of elastic properties towards desired dynamic behaviour.
 
-**Funzionalità Warp utilizzate:**
-• `builder.add_soft_grid()` - Generazione automatica griglia FEM tetraedrica con proprietà materiali
-• `wp.array2d()` per `tet_materials` - Gestione parametri materiali per-tetraedro differenziabili
-• `wp.optim.SGD` - Optimizer per parametri fisici con constraint enforcement
-• Differentiation attraverso FEM - Gradienti automatici attraverso dinamiche elementi finiti
-• Parameter constraints - Applicazione vincoli su bounds parametri materiali validi
-• Collision handling differenziabile - Integrazione contatti soft-body in backpropagation
+**Warp features used:**
+• `builder.add_soft_grid()` - Automatic generation of a tetrahedral FEM grid with material properties
+• `wp.array2d()` for `tet_materials` - Differentiable per-tetrahedron material parameters
+• `wp.optim.SGD` - Optimiser for physical parameters with constraint enforcement
+• Differentiation through FEM - Automatic gradients through finite element dynamics
+• Parameter constraints - Bounds enforcement on valid material parameters
+• Differentiable collision handling - Soft-body contacts integrated into backpropagation
 
-**Capacità chiave:**
-Warp abilita material design inverso tramite simulazione FEM completamente differenziabile, calcolando gradienti attraverso dinamiche deformabili complesse. Il sistema permette ottimizzazione intelligente di proprietà materiali per comportamenti soft-body specifici.
+**Key capability:**
+Warp enables inverse material design through fully differentiable FEM simulation, computing gradients across complex deformable dynamics. The system allows intelligent optimisation of material properties towards specific soft-body behaviours.
 
-## fluid checkpoint - Ottimizzazione Fluidi con Gradient Checkpointing
+## fluid checkpoint - Fluid Optimisation with Gradient Checkpointing
 
-**Fenomeno simulato:**
-Risolutore stable-fluids 2D completamente differenziabile che ottimizza il campo di velocità iniziale per far formare al fluido il logo NVIDIA finale. Implementa gradient checkpointing manuale per ridurre drasticamente l'uso di memoria durante backpropagation su lunghe simulazioni.
+**What it simulates:**
+A fully differentiable 2D stable-fluids solver that optimises the initial velocity field so that the fluid forms the NVIDIA logo at the end. Implements manual gradient checkpointing to cut memory use dramatically during backpropagation over long simulations.
 
-**Funzionalità Warp utilizzate:**
-• Checkpointing segmentato - Gestione memoria tramite ricomputo forward selettivo durante backward
-• Boundary conditions cicliche - Simulazione domini toroidali con `cyclic_index()`
-• Jacobi pressure solver - Iterazioni multiple per proiezione incompressibilità differenziabile
-• `wp.optim.Adam` - Optimizer avanzato per campi velocità ad alta risoluzione (512x512)
-• Semi-Lagrangian advection - Transport backward-Euler con interpolazione bilineare differenziabile
-• CUDA graphs multipli - Pre-compilazione separata forward/backward/zero per performance ottimali
+**Warp features used:**
+• Segmented checkpointing - Memory management through selective forward recomputation during the backward pass
+• Cyclic boundary conditions - Toroidal domain simulation with `cyclic_index()`
+• Jacobi pressure solver - Multiple iterations for a differentiable incompressibility projection
+• `wp.optim.Adam` - Advanced optimiser for high-resolution velocity fields (512x512)
+• Semi-Lagrangian advection - Backward-Euler transport with differentiable bilinear interpolation
+• Multiple CUDA graphs - Separate pre-compilation of forward/backward/zero for optimal performance
 
-**Capacità chiave:**
-Warp implementa strategie memory-efficient per simulazioni lunghe differenziabili, permettendo ottimizzazione inverse rendering su dinamiche fluide complesse. Il checkpointing automatico bilancia compute vs memoria per training scalabile su GPU.
+**Key capability:**
+Warp implements memory-efficient strategies for long differentiable simulations, enabling inverse rendering optimisation over complex fluid dynamics. Checkpointing balances compute against memory for training that scales on the GPU.
 
 ---

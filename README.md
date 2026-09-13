@@ -21,7 +21,7 @@ the section on `rbsimv1.py` says where it stops.
 |---|---|
 | **`scripts/sloshing/`** | the solver, the mesh pipeline, the rigid-body attempt |
 | **`assets/`** | the container mesh, as a triangulated PLY export |
-| **`info/`** | five reading notes on the official Warp examples (in Italian) |
+| **`info/`** | five reading notes on the official Warp examples |
 
 | File | What it does |
 |---|---|
@@ -154,8 +154,9 @@ It is here as part of that record, not as a working example.
 
 Five notes written while reading the official Warp examples, one per module family — `core`, `fem`,
 `optim`, `sim`, `tile`. Each example gets the phenomenon it simulates, the API surface it exercises,
-and a short observation. They are in Italian, and they are what the first weeks of this work
-produced: a map of what the framework offers before committing to one corner of it.
+and a short observation. They are what the first weeks of this work produced: a map of what the
+framework offers before committing to one corner of it. They were written in Italian at the time and
+translated for publication.
 
 ---
 

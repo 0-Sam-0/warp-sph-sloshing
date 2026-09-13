@@ -1,50 +1,50 @@
 # Examples/tile
 
-## mlp - Neural Network Coordinate-Based per Rappresentazione Immagini
+## mlp - Coordinate-Based Neural Network for Image Representation
 
-**Fenomeno simulato:**
-Addestra una rete neurale multilayer perceptron coordinate-based per predire colori RGB a posizioni input date, utilizzando positional encoding per migliorare rappresentazione contenuti high-frequency. Confronta implementazioni Warp vs PyTorch.
+**What it simulates:**
+Trains a coordinate-based multilayer perceptron to predict RGB colours at given input positions, using positional encoding to improve the representation of high-frequency content. Compares the Warp and PyTorch implementations.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Tape()` automatic differentiation - Backpropagation nativa GPU attraverso network layers
-• `warp.optim.Adam` - Ottimizzatore Adam integrato per parameter updates GPU-ottimizzati
-• `wp.tile_*` operations - Sfruttamento tensor cores per matrix operations high-performance
-• CUDA graph capture - Pre-compilazione training epochs per eliminating CPU overhead
-• `wp.float16` precision - Memory efficiency e throughput migliorati su hardware moderno
-• Block-level parallelization - Gestione automatica thread blocks per batch processing
+**Warp features used:**
+• `wp.Tape()` automatic differentiation - Native GPU backpropagation through the network layers
+• `warp.optim.Adam` - Built-in Adam optimiser for GPU-optimised parameter updates
+• `wp.tile_*` operations - Use of tensor cores for high-performance matrix operations
+• CUDA graph capture - Pre-compilation of training epochs to eliminate CPU overhead
+• `wp.float16` precision - Improved memory efficiency and throughput on modern hardware
+• Block-level parallelisation - Automatic thread block handling for batch processing
 
-**Capacità chiave:**
-Warp compete direttamente con PyTorch per workloads ML moderni mantenendo integrazione seamless con simulazioni fisiche. Le tile operations sfruttano hardware specializzato ottenendo performance comparable ai framework ML dedicati.
+**Key capability:**
+Warp competes directly with PyTorch on modern ML workloads while integrating seamlessly with physics simulation. Tile operations exploit specialised hardware, reaching performance comparable to dedicated ML frameworks.
 
-## nbody - Simulazione Gravitazionale N-Body con Tile Primitives
+## nbody - Gravitational N-Body Simulation with Tile Primitives
 
-**Fenomeno simulato:**
-Simula un problema gravitazionale N-Body utilizzando approccio all-pairs con primitive tile di Warp. Le particelle sono inizialmente distribuite su una sfera e hanno velocità iniziali che creano rotazione, simulando la formazione di strutture gravitazionali.
+**What it simulates:**
+Simulates a gravitational N-Body problem using an all-pairs approach built on Warp's tile primitives. Particles start distributed over a sphere with initial velocities that induce rotation, simulating the formation of gravitational structures.
 
-**Funzionalità Warp utilizzate:**
-• `wp.tile_load()` - Caricamento efficiente di dati in tile per sfruttare memoria condivisa GPU
-• `wp.constant()` - Definizione costanti compile-time per parametri fisici (DT, SOFTENING_SQ, TILE_SIZE)
-• Block-level parallelization con `block_dim=TILE_SIZE` - Ottimizzazione accesso memoria tramite tiling
-• `body_body_interaction()` - Funzione per calcolo forza gravitazionale tra coppie particelle con softening
-• All-pairs interaction pattern - Ogni particella interagisce con tutte le altre per simulazione accurata
-• Array swapping - Gestione doppio buffer per aggiornamenti posizione senza race conditions
+**Warp features used:**
+• `wp.tile_load()` - Efficient loading of data into tiles to exploit GPU shared memory
+• `wp.constant()` - Compile-time constants for physical parameters (DT, SOFTENING_SQ, TILE_SIZE)
+• Block-level parallelisation with `block_dim=TILE_SIZE` - Memory access optimisation through tiling
+• `body_body_interaction()` - Function computing the gravitational force between particle pairs with softening
+• All-pairs interaction pattern - Every particle interacts with every other one for an accurate simulation
+• Array swapping - Double buffering for position updates without race conditions
 
-**Capacità chiave:**
-Warp gestisce automaticamente tile operations per sfruttare architetture GPU moderne con shared memory. L'approccio tiled permette simulazioni N-Body scalabili fino a decine di migliaia di particelle mantenendo accuracy fisica e performance real-time per applicazioni astrofisiche.
+**Key capability:**
+Warp handles tile operations automatically to exploit modern GPU architectures with shared memory. The tiled approach scales N-Body simulations to tens of thousands of particles while keeping physical accuracy and real-time performance for astrophysical applications.
 
-## walker - Training Quadruped Soft-Body Locomotion con Neural Networks
+## walker - Training Quadruped Soft-Body Locomotion with Neural Networks
 
-**Fenomeno simulato:**
-Allena un quadrupede mesh tetraedrico a camminare tramite rete neurale fully-connected che converte 8 fasi temporali sinusoidali in attivazioni tetraedriche. Il modello soft-body viene simulato forward e valutato sulla momentum del centro di massa.
+**What it simulates:**
+Trains a tetrahedral mesh quadruped to walk through a fully-connected neural network that converts 8 sinusoidal time phases into tetrahedral activations. The soft-body model is simulated forward and evaluated on the momentum of its centre of mass.
 
-**Funzionalità Warp utilizzate:**
-• `wp.sim` soft-body physics - Simulazione tetraedri deformabili con contact handling e ground interaction
-• `wp.launch_tiled()` con tile operations - Matrix multiplication ottimizzata via tensor cores per neural network
-• `warp.optim.Adam` - Ottimizzatore integrato per training parameters della rete neurale  
-• `wp.Tape()` + CUDA graph capture - Automatic differentiation attraverso physics simulation con pre-compilazione
-• Tetrahedron activation control - Neural outputs interpretati come muscle activations per soft-body locomotion
+**Warp features used:**
+• `wp.sim` soft-body physics - Deformable tetrahedra simulation with contact handling and ground interaction
+• `wp.launch_tiled()` with tile operations - Matrix multiplication optimised via tensor cores for the neural network
+• `warp.optim.Adam` - Built-in optimiser for training the network parameters  
+• `wp.Tape()` + CUDA graph capture - Automatic differentiation through the physics simulation with pre-compilation
+• Tetrahedron activation control - Neural outputs read as muscle activations for soft-body locomotion
 
-**Capacità chiave:**
-Warp unifica seamlessly machine learning con simulazioni fisiche complesse, permettendo end-to-end training di sistemi robotici soft attraverso differenziazione automatica. Il framework gestisce automaticamente gradienti attraverso physics engines per applications neuro-meccaniche avanzate.
+**Key capability:**
+Warp unifies machine learning with complex physics simulation seamlessly, allowing end-to-end training of soft robotic systems through automatic differentiation. The framework propagates gradients through physics engines automatically, for advanced neuro-mechanical applications.
 
 ---

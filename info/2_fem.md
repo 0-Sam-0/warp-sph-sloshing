@@ -1,191 +1,191 @@
 # Examples/fem
 
-## diffusion 3d - Risoluzione PDE con Metodi Elementi Finiti
+## diffusion 3d - Solving PDEs with Finite Element Methods
 
-**Fenomeno simulato:**
-Risolve l'equazione di diffusione 3D "νΔu = 1" con condizioni al contorno miste (Neumann sui lati orizzontali, Dirichlet sugli altri) utilizzando metodi agli elementi finiti su diverse topologie mesh.
+**What it simulates:**
+Solves the 3D diffusion equation "νΔu = 1" with mixed boundary conditions (Neumann on the horizontal sides, Dirichlet on the others) using finite element methods over several mesh topologies.
 
-**Funzionalità Warp utilizzate:**
-• `warp.fem` module - Framework completo elementi finiti con integrazione automatica
-• `@fem.integrand` - Decoratori per forme matematiche deboli (diffusion, boundary forms)
+**Warp features used:**
+• `warp.fem` module - Complete finite element framework with automatic integration
+• `@fem.integrand` - Decorators for weak mathematical forms (diffusion, boundary forms)
 • Multi-mesh support - Grid3D, Tetmesh, Hexmesh, Nanogrid, Trimesh3D, Quadmesh3D
-• `fem.integrate()` - Assemblaggio automatico matrici e vettori right-hand-side
-• Boundary condition handling - Proiezione sistemi lineari e weak enforcement
-• `fem_example_utils.bsr_cg()` - Solver iterativo Conjugate Gradient ottimizzato
+• `fem.integrate()` - Automatic assembly of matrices and right-hand-side vectors
+• Boundary condition handling - Linear system projection and weak enforcement
+• `fem_example_utils.bsr_cg()` - Optimised iterative Conjugate Gradient solver
 
-**Capacità chiave:**
-Warp.fem fornisce un framework FEM completo GPU-nativo che gestisce automaticamente discretizzazioni spaziali complesse e assemblaggio matriciale. Supporta multiple tipologie mesh e condizioni al contorno con performance scalabili per problemi PDE industriali.
+**Key capability:**
+Warp.fem provides a complete GPU-native FEM framework that handles complex spatial discretisations and matrix assembly automatically. It supports multiple mesh types and boundary conditions with performance that scales to industrial PDE problems.
 
-## mixed elasticity - Elasticità Non Lineare con Metodi Misti FEM
+## mixed elasticity - Nonlinear Elasticity with Mixed FEM Methods
 
-**Fenomeno simulato:**
-Risolve l'equazione di equilibrio elastico non lineare Neo-Hookiano "Div[d/dF Ψ(F(u))] = 0" usando formulazione mista con spazi funzionali separati per spostamenti e stress. Applica iterazioni Newton per gestire la non linearità del modello costitutivo.
+**What it simulates:**
+Solves the nonlinear Neo-Hookean elastic equilibrium equation "Div[d/dF Ψ(F(u))] = 0" using a mixed formulation with separate function spaces for displacement and stress. Applies Newton iterations to handle the nonlinearity of the constitutive model.
 
-**Funzionalità Warp utilizzate:**
-• Mixed FEM spaces - Spazi funzionali separati per displacement (Serendipity) e stress tensors
-• `@fem.integrand` Neo-Hookean - Forme bilineari per stress/strain energy e approssimazione Gauss-Newton  
-• Newton iterations - Loop automatizzato con assemblaggio matriciale incrementale per non linearità
-• Block diagonal operations - Inversione matrici massa tau e accoppiamento gradient/stress
-• Multiple element types - Triangular, quadrilateral con basis functions adattive
-• Area conservation tracking - Integrazione controllo vincoli incompressibilità
+**Warp features used:**
+• Mixed FEM spaces - Separate function spaces for displacement (Serendipity) and stress tensors
+• `@fem.integrand` Neo-Hookean - Bilinear forms for stress/strain energy and Gauss-Newton approximation  
+• Newton iterations - Automated loop with incremental matrix assembly for the nonlinearity
+• Block diagonal operations - Tau mass matrix inversion and gradient/stress coupling
+• Multiple element types - Triangular, quadrilateral with adaptive basis functions
+• Area conservation tracking - Integrated monitoring of incompressibility constraints
 
-**Capacità chiave:**
-Warp.fem gestisce formulazioni miste avanzate con multiple unknown fields e solver non lineari robusti. L'assemblaggio automatico delle forme Newton-Raphson permette simulazioni iperelastiche industriali con controllo preciso delle proprietà materiali.
+**Key capability:**
+Warp.fem handles advanced mixed formulations with multiple unknown fields and robust nonlinear solvers. Automatic assembly of the Newton-Raphson forms allows industrial hyperelastic simulations with precise control over material properties.
 
-## apic fluid - Simulazione Fluidi con Metodo Affine Particle-In-Cell
+## apic fluid - Fluid Simulation with the Affine Particle-In-Cell Method
 
-**Fenomeno simulato:**
-Simulazione fluidi APIC (Affine Particle-In-Cell) che combina particelle Lagrangiane con griglia Euleriana adattiva NanoVDB. Include gravità, incompressibilità, collisioni SDF e trasferimento bidirezionale particelle-griglia per conservazione momento angolare.
+**What it simulates:**
+APIC (Affine Particle-In-Cell) fluid simulation combining Lagrangian particles with an adaptive Eulerian NanoVDB grid. Includes gravity, incompressibility, SDF collisions and bidirectional particle-grid transfer for angular momentum conservation.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Volume.allocate_by_voxels()` - Griglia adattiva automatica basata su distribuzione particelle
-• `fem.PicQuadrature` - Classe specializzata per quadrature particle-in-cell con measures
-• Mixed FEM spaces - Q1 velocity/fraction, P0 pressure per incompressible flow
-• `fem.interpolate()` APIC advection - Trasferimento velocità e gradienti griglia→particelle  
-• Incompressibility solver - Divergence-free projection con Schur complement method
-• Collision SDF integration - Boundary conditions tramite signed distance functions
+**Warp features used:**
+• `wp.Volume.allocate_by_voxels()` - Automatic adaptive grid based on particle distribution
+• `fem.PicQuadrature` - Specialised class for particle-in-cell quadrature with measures
+• Mixed FEM spaces - Q1 velocity/fraction, P0 pressure for incompressible flow
+• `fem.interpolate()` APIC advection - Velocity and gradient transfer grid→particles  
+• Incompressibility solver - Divergence-free projection with the Schur complement method
+• Collision SDF integration - Boundary conditions through signed distance functions
 
-**Capacità chiave:**
-Warp unifica seamlessly metodi particellari e FEM con griglia adattiva che si ridimensiona automaticamente. Il framework gestisce thousands di particelle con fisica fluidi accurata mantenendo performance real-time per simulazioni production-quality.
+**Key capability:**
+Warp unifies particle methods and FEM seamlessly, over an adaptive grid that resizes itself. The framework handles thousands of particles with accurate fluid physics while keeping real-time performance for production-quality simulations.
 
-## streamlines - Generazione Streamlines 3D con Tracing Campi Velocità
+## streamlines - 3D Streamline Generation by Velocity Field Tracing
 
-**Fenomeno simulato:**
-Genera streamlines 3D tracciando attraverso campi di velocità incompressibili con condizioni al contorno miste (inflow, outflow, free-slip). Utilizza forward tracing con step fisso per visualizzare patterns di flusso fluido.
+**What it simulates:**
+Generates 3D streamlines by tracing through incompressible velocity fields with mixed boundary conditions (inflow, outflow, free-slip). Uses fixed-step forward tracing to visualise fluid flow patterns.
 
-**Funzionalità Warp utilizzate:**
-• `fem.lookup()` - Operatore per spatial lookup e interpolazione field values in domini arbitrari
-• `fem.Subdomain` - Definizione subset elementi per boundary conditions differenziate
-• Raviart-Thomas elements - Spazi funzionali RT1/P0 per velocity/pressure incompressible flow
-• Streamline generation - `fem.interpolate()` con spawn points jittered e forward integration
-• Multiple boundary types - Classification automatica sides per inflow/outflow/freeslip conditions
+**Warp features used:**
+• `fem.lookup()` - Operator for spatial lookup and field value interpolation over arbitrary domains
+• `fem.Subdomain` - Definition of element subsets for differentiated boundary conditions
+• Raviart-Thomas elements - RT1/P0 function spaces for incompressible velocity/pressure flow
+• Streamline generation - `fem.interpolate()` with jittered spawn points and forward integration
+• Multiple boundary types - Automatic side classification for inflow/outflow/free-slip conditions
 
-**Capacità chiave:**
-Warp.fem integra seamlessly solvers PDE con post-processing visualization avanzato, permettendo field tracing efficiente su geometrie complesse. Il lookup operator mantiene accuracy spatial anche durante advection fuori dal dominio originale.
+**Key capability:**
+Warp.fem integrates PDE solvers with advanced post-processing visualisation seamlessly, allowing efficient field tracing over complex geometries. The lookup operator preserves spatial accuracy even when advection leaves the original domain.
 
-## distortion energy - Ottimizzazione Parametrizzazione Superficie 3D
+## distortion energy - Optimising the Parametrisation of a 3D Surface
 
-**Fenomeno simulato:**
-Minimizza la distorsione di parametrizzazione (u,v) di superfici 3D utilizzando energia Symmetric Dirichlet "E(F) = ½|F|² + |F⁻¹|²" con iterazioni Newton per ottimizzazione non lineare del gradiente di deformazione F.
+**What it simulates:**
+Minimises the (u,v) parametrisation distortion of 3D surfaces using the Symmetric Dirichlet energy "E(F) = ½|F|² + |F⁻¹|²", with Newton iterations for nonlinear optimisation of the deformation gradient F.
 
-**Funzionalità Warp utilizzate:**
-• `@fem.integrand` energy forms - Gradient/Hessian Symmetric Dirichlet per ottimizzazione parametrizzazione
-• `fem.grad()` - Calcolo gradienti deformazione e approssimazione Gauss-Newton hessiana  
-• Newton iterations - Loop automatizzato con line-search implicito per energy minimization
-• `make_deformed_geometry()` - Costruzione geometrie deformate da displacement fields
-• Multi-mesh support - Triangular, quad, deformed geometries con spazi parametrici 2D/3D
-• Checkerboard visualization - Pattern rendering per validazione distorsione parametrizzazione
+**Warp features used:**
+• `@fem.integrand` energy forms - Symmetric Dirichlet gradient/Hessian for parametrisation optimisation
+• `fem.grad()` - Deformation gradient computation and Gauss-Newton Hessian approximation  
+• Newton iterations - Automated loop with implicit line search for energy minimisation
+• `make_deformed_geometry()` - Construction of deformed geometries from displacement fields
+• Multi-mesh support - Triangular, quad, deformed geometries with 2D/3D parametric spaces
+• Checkerboard visualisation - Pattern rendering to validate parametrisation distortion
 
-**Capacità chiave:**
-Warp.fem gestisce ottimizzazione energy-based avanzata per parametrizzazione geometrica, essenziale per texture mapping e mesh processing. Il framework automatizza derivate complesse mantenendo accuracy numerica per applicazioni computer graphics industriali.
+**Key capability:**
+Warp.fem handles advanced energy-based optimisation for geometric parametrisation, essential to texture mapping and mesh processing. The framework automates complex derivatives while preserving the numerical accuracy required by industrial computer graphics.
 
-## navier stokes - Equazioni Navier-Stokes 2D con Advection Semi-Lagrangiana
+## navier stokes - 2D Navier-Stokes Equations with Semi-Lagrangian Advection
 
-**Fenomeno simulato:**
-Risolve le equazioni Navier-Stokes 2D incompressibili "Du/dt - νΔ(u) + ∇p = 0, ∇·u = 0" con velocity-Dirichlet boundary conditions e schema advection semi-Lagrangiano per stabilità numerica delle forzanti convettive.
+**What it simulates:**
+Solves the incompressible 2D Navier-Stokes equations "Du/dt - νΔ(u) + ∇p = 0, ∇·u = 0" with velocity-Dirichlet boundary conditions and a semi-Lagrangian advection scheme for numerical stability of the convective terms.
 
-**Funzionalità Warp utilizzate:**
-• Mixed FEM Q(d)-Q(d-1) - Spazi funzionali stabili velocity/pressure per sistemi saddle-point
-• `fem.lookup()` semi-Lagrangian - Backtracking convection con interpolazione accuracy preserving
-• `fem.ImplicitField` - Definizione boundary conditions tramite funzioni implicite
-• `SaddleSystem` solver - Assemblaggio/soluzione automatica sistemi accoppiati incompressibili
-• Hard boundary projection - Enforcing Dirichlet conditions tramite constraint matrix
+**Warp features used:**
+• Mixed FEM Q(d)-Q(d-1) - Stable velocity/pressure function spaces for saddle-point systems
+• `fem.lookup()` semi-Lagrangian - Backtracking convection with accuracy-preserving interpolation
+• `fem.ImplicitField` - Boundary conditions defined through implicit functions
+• `SaddleSystem` solver - Automatic assembly and solution of coupled incompressible systems
+• Hard boundary projection - Dirichlet condition enforcement through a constraint matrix
 
-**Capacità chiave:**
-Warp.fem fornisce framework CFD completo con metodi avanzati per flussi incompressibili, incluso semi-Lagrangian advection che elimina restrizioni CFL. La gestione automatica di saddle-point systems permette simulazioni fluidi stabili anche ad alti Reynolds numbers.
+**Key capability:**
+Warp.fem provides a complete CFD framework with advanced methods for incompressible flows, including semi-Lagrangian advection that removes the CFL restriction. Automatic handling of saddle-point systems keeps fluid simulations stable even at high Reynolds numbers.
 
-## burgers - PDE Burgers Non-Viscosa con Discontinuous Galerkin
+## burgers - Inviscid Burgers PDE with Discontinuous Galerkin
 
-**Fenomeno simulato:**
-Risolve la PDE Burgers inviscida non-conservativa "∂u/∂t + (u·∇)u = 0" utilizzando metodo Discontinuous Galerkin con limitatore di pendenza minmod per gestire soluzioni discontinue e shock formation.
+**What it simulates:**
+Solves the non-conservative inviscid Burgers PDE "∂u/∂t + (u·∇)u = 0" using a Discontinuous Galerkin method with a minmod slope limiter to handle discontinuous solutions and shock formation.
 
-**Funzionalità Warp utilizzate:**
-• Discontinuous Galerkin spaces - Spazi funzionali discontinui per capturing shock waves
-• `fem.jump()` / `fem.average()` - Operatori per condizioni salto/media alle interfacce elementi
-• Upwind transport form - Schema upwind con flussi numerici per stabilità iperbolica  
-• Minmod slope limiter - Limitatore pendenza per prevenire oscillazioni spurie vicino discontinuità
-• SSPRK3 integration - Strong Stability Preserving Runge-Kutta 3rd order per conservation
-• `fem.lookup()` neighbor access - Accesso celle adiacenti per slope limiting calculations
+**Warp features used:**
+• Discontinuous Galerkin spaces - Discontinuous function spaces for capturing shock waves
+• `fem.jump()` / `fem.average()` - Operators for jump/average conditions at element interfaces
+• Upwind transport form - Upwind scheme with numerical fluxes for hyperbolic stability  
+• Minmod slope limiter - Slope limiter preventing spurious oscillations near discontinuities
+• SSPRK3 integration - Strong Stability Preserving Runge-Kutta 3rd order for conservation
+• `fem.lookup()` neighbour access - Access to adjacent cells for slope limiting calculations
 
-**Capacità chiave:**
-Warp.fem gestisce completamente metodi DG per equazioni iperboliche non lineari, includendo limitatori shock-capturing automatici. Il framework mantiene properties conservativi essenziali mantenendo stability anche per soluzioni con gradienti estremi e discontinuità.
+**Key capability:**
+Warp.fem fully supports DG methods for nonlinear hyperbolic equations, automatic shock-capturing limiters included. The framework preserves the essential conservation properties while staying stable even for solutions with extreme gradients and discontinuities.
 
-## magnetostatics - Magnetostatica 3D con Elementi Nédélec H(curl)
+## magnetostatics - 3D Magnetostatics with Nédélec H(curl) Elements
 
-**Fenomeno simulato:**
-Risolve un problema magnetostatico 3D (bobina rame con corrente radiale attorno a nucleo ferro cilindrico) usando formulazione curl-curl e spazi funzionali H(curl)-conformi per le equazioni Maxwell statiche "1/μ∇×B + j = 0".
+**What it simulates:**
+Solves a 3D magnetostatic problem (a copper coil carrying radial current around a cylindrical iron core) using a curl-curl formulation and H(curl)-conforming function spaces for the static Maxwell equations "1/μ∇×B + j = 0".
 
-**Funzionalità Warp utilizzate:**
-• `fem.ElementBasis.NEDELEC_FIRST_KIND` - Elementi Nédélec per H(curl) conformity elettromagnetica
-• `fem.ImplicitField` con geometry deformation - Mappatura cube→cylinder con gradiente analitico
-• Multi-material domains - Campi permeabilità μ differenziati (ferro, rame, vuoto) tramite funzioni implicite
-• `curl_curl_form` - Formulazione variazionale curl-curl per campi vettoriali elettromagnetici
-• `fem.curl()` operator - Operatore curl built-in per post-processing campo magnetico B
-• Deformed geometry construction - Geometrie complesse da implicit field mappings
+**Warp features used:**
+• `fem.ElementBasis.NEDELEC_FIRST_KIND` - Nédélec elements for electromagnetic H(curl) conformity
+• `fem.ImplicitField` with geometry deformation - Cube→cylinder mapping with analytic gradient
+• Multi-material domains - Differentiated permeability fields μ (iron, copper, vacuum) through implicit functions
+• `curl_curl_form` - Curl-curl variational formulation for electromagnetic vector fields
+• `fem.curl()` operator - Built-in curl operator for post-processing the magnetic field B
+• Deformed geometry construction - Complex geometries from implicit field mappings
 
-**Capacità chiave:**
-Warp.fem gestisce completamente problemi elettromagnetici industriali con geometrie arbitrarie e proprietà materiali complesse. Gli elementi Nédélec garantiscono continuità tangenziale appropriata per campi vettoriali, essenziale per accuratezza nelle simulazioni Maxwell.
+**Key capability:**
+Warp.fem fully supports industrial electromagnetic problems with arbitrary geometries and complex material properties. Nédélec elements guarantee the tangential continuity that vector fields require, which is essential to accuracy in Maxwell simulations.
 
-## adaptive grid - Griglie Adattive per Simulazioni CFD con Colliders Complessi
+## adaptive grid - Adaptive Grids for CFD with Complex Colliders
 
-**Fenomeno simulato:**
-Simulazione flussi incompressibili attorno a geometrie complesse utilizzando griglie adattive che aumentano automaticamente la risoluzione vicino ai boundary dei colliders. Gestisce t-junctions e discontinuità tra livelli di raffinamento multipli.
+**What it simulates:**
+Incompressible flow simulation around complex geometries using adaptive grids that raise resolution automatically near collider boundaries. Handles t-junctions and discontinuities between multiple refinement levels.
 
-**Funzionalità Warp utilizzate:**
-• `fem.adaptivity.adaptive_nanogrid_from_field()` - Generazione automatica griglie multi-livello da refinement fields
-• `fem.ImplicitField` refinement function - Controllo zones raffinamento tramite SDF distance-based criteria  
-• H(div)-conforming Raviart-Thomas - Elementi che conservano massa localmente per accuracy CFD
-• T-junction handling - Gestione automatica discontinuità ai boundary tra resolution levels
-• `side_divergence_form` - Correzioni flusso per transizioni risoluzione non-conforming
-• NanoVDB collider integration - Geometrie collisione complesse da pipeline industriali
+**Warp features used:**
+• `fem.adaptivity.adaptive_nanogrid_from_field()` - Automatic generation of multi-level grids from refinement fields
+• `fem.ImplicitField` refinement function - Refinement zone control through SDF distance-based criteria  
+• H(div)-conforming Raviart-Thomas - Elements that conserve mass locally for CFD accuracy
+• T-junction handling - Automatic handling of discontinuities at boundaries between resolution levels
+• `side_divergence_form` - Flux corrections for non-conforming resolution transitions
+• NanoVDB collider integration - Complex collision geometries from industrial pipelines
 
-**Capacità chiave:**
-Warp.fem automatizza completamente adaptive mesh refinement mantenendo conservation properties e accuracy numerica. Le griglie adattive permettono simulazioni CFD scalabili con computational cost ottimale concentrando risoluzione solo nelle zone critiche.
+**Key capability:**
+Warp.fem fully automates adaptive mesh refinement while preserving conservation properties and numerical accuracy. Adaptive grids make CFD simulations scalable at an optimal computational cost, concentrating resolution only where it matters.
 
-## nonconforming contact - Contatto Elastico tra Corpi Non-Conformi
+## nonconforming contact - Elastic Contact Between Non-Conforming Bodies
 
-**Fenomeno simulato:**
-Risolve un problema di contatto no-slip tra due corpi elastici discretizzati separatamente con "Div[E:D(u)] = g". Utilizza schema iterativo staggered dove i corpi si influenzano reciprocamente tramite displacement Dirichlet BC e applied boundary stress.
+**What it simulates:**
+Solves a no-slip contact problem between two elastic bodies discretised separately, with "Div[E:D(u)] = g". Uses a staggered iterative scheme in which the bodies influence each other through displacement Dirichlet BCs and applied boundary stress.
 
-**Funzionalità Warp utilizzate:**
-• `fem.field.NonconformingField` - Accoppiamento campi tra geometrie discretizzate indipendentemente
-• `fem.SymmetricTensorMapper(wp.mat22)` - Storage ottimizzato tensori simmetrici (3 DOF vs 4 DOF completi)
-• Mixed displacement-stress formulation - Spazi Serendipity S_k per displacement, Q_{k-1}d per stress
-• Staggered iterative coupling - Soluzione alternata corpi con coupling tramite boundary conditions
-• Damped stress updates - Controllo stabilità numerica tramite relaxation parameters
+**Warp features used:**
+• `fem.field.NonconformingField` - Field coupling between independently discretised geometries
+• `fem.SymmetricTensorMapper(wp.mat22)` - Optimised storage of symmetric tensors (3 DOF instead of a full 4)
+• Mixed displacement-stress formulation - Serendipity S_k spaces for displacement, Q_{k-1}d for stress
+• Staggered iterative coupling - Bodies solved alternately, coupled through boundary conditions
+• Damped stress updates - Numerical stability control through relaxation parameters
 
-**Capacità chiave:**
-Warp.fem gestisce nativamente problemi multi-body contact con discretizzazioni non-conformi, essenziale per simulazioni meccaniche industriali. Il framework automatizza trasferimento informazioni tra geometrie separate mantenendo accuracy fisica dell'interfaccia di contatto.
+**Key capability:**
+Warp.fem natively handles multi-body contact problems with non-conforming discretisations, essential to industrial mechanical simulation. The framework automates information transfer between separate geometries while preserving the physical accuracy of the contact interface.
 
-## darcy level-set optimization - Ottimizzazione Topologica Darcy Flow 2D
+## darcy level-set optimization - Topology Optimisation of 2D Darcy Flow
 
-**Fenomeno simulato:**
-Ottimizzazione forma basata su level set per massimizzare flusso Darcy attraverso dominio 2D quadrato. Evolve implicit shape representation tramite gradiente adiuvante per ottimizzare permeabilità regioni materiale sotto vincoli volume costante.
+**What it simulates:**
+Level-set based shape optimisation maximising Darcy flow through a square 2D domain. Evolves an implicit shape representation through the adjoint gradient to optimise the permeability of material regions under a constant volume constraint.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Tape()` automatic differentiation - Calcolo gradienti adiuvanti attraverso PDE solve complessi
-• Level set method con sigmoid smoothing - Rappresentazione implicita interfacce materiale differenziabili
-• `fem.ImplicitField` per material properties - Campi permeabilità smooth function del level set
-• Semi-Lagrangian/DG advection - Multiple schemi per evoluzione level set (continua/discontinua)
-• Implicit Function Theorem - Differenziazione attraverso linear system solve iterativi
-• Volume constraint penalty - Enforcement vincoli tramite weighted loss combination
-• Forward/backward optimization loop - Gestione completa ciclo ottimizzazione topology
+**Warp features used:**
+• `wp.Tape()` automatic differentiation - Adjoint gradient computation through complex PDE solves
+• Level set method with sigmoid smoothing - Differentiable implicit representation of material interfaces
+• `fem.ImplicitField` for material properties - Permeability fields as a smooth function of the level set
+• Semi-Lagrangian/DG advection - Multiple schemes for level set evolution (continuous/discontinuous)
+• Implicit Function Theorem - Differentiation through iterative linear system solves
+• Volume constraint penalty - Constraint enforcement through a weighted loss combination
+• Forward/backward optimisation loop - Full management of the topology optimisation cycle
 
-**Capacità chiave:**
-Warp.fem unifica seamlessly PDE solving con automatic differentiation per problemi ottimizzazione topologica industriali. Il framework gestisce automaticamente adjoint computation attraverso implicit solvers, permitendo shape optimization scalabile per applicazioni engineering realistiche.
+**Key capability:**
+Warp.fem unifies PDE solving with automatic differentiation seamlessly for industrial topology optimisation problems. The framework handles adjoint computation through implicit solvers automatically, allowing shape optimisation that scales to realistic engineering applications.
 
-## elastic shape optimization - Ottimizzazione Forma Trave Elastica 2D
+## elastic shape optimization - Shape Optimisation of a 2D Elastic Beam
 
-**Fenomeno simulato:**
-Ottimizzazione forma trave cantilever 2D per minimizzare norma quadratica stress field (compliance) tramite analisi elementi finiti e gradient-based optimization. Trave fissata a sinistra con carico costante destro, con vincoli volume e boundary conditions.
+**What it simulates:**
+Shape optimisation of a 2D cantilever beam minimising the squared norm of the stress field (compliance) through finite element analysis and gradient-based optimisation. The beam is fixed on the left with a constant load on the right, under volume constraints and boundary conditions.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Tape()` + Implicit Function Theorem - Differenziazione automatica attraverso linear system solves elastici
-• `warp.optim.Adam` - Ottimizzatore gradient-based integrato per nodal position updates
-• Hooke elasticity `@fem.integrand` - Formulazione stress-strain con parametri Lame per materiali realistici
-• Deformed geometry construction - Support per triangular/quad/grid meshes con vertex position optimization
-• Quality regularization terms - Penalizzazione elementi degenerati/invertiti per mesh stability senza remeshing
-• Fixed vertex projectors - Enforcement boundary constraints durante shape optimization
+**Warp features used:**
+• `wp.Tape()` + Implicit Function Theorem - Automatic differentiation through elastic linear system solves
+• `warp.optim.Adam` - Built-in gradient-based optimiser for nodal position updates
+• Hooke elasticity `@fem.integrand` - Stress-strain formulation with Lamé parameters for realistic materials
+• Deformed geometry construction - Support for triangular/quad/grid meshes with vertex position optimisation
+• Quality regularisation terms - Penalties on degenerate/inverted elements for mesh stability without remeshing
+• Fixed vertex projectors - Boundary constraint enforcement during shape optimisation
 
-**Capacità chiave:**
-Warp.fem automatizza completamente shape optimization strutturale con automatic differentiation attraverso PDE solvers complessi. L'integrazione nativa con optimizers scalabili permette design optimization industriale mantenendo physics accuracy e mesh quality.
+**Key capability:**
+Warp.fem fully automates structural shape optimisation with automatic differentiation through complex PDE solvers. Native integration with scalable optimisers allows industrial design optimisation while preserving physics accuracy and mesh quality.

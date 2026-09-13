@@ -1,186 +1,186 @@
 # Examples/core
 
-## dem - Simulazione Particelle Coesive
+## dem - Cohesive Particle Simulation
 
-**Fenomeno simulato:**
-Simulazione DEM (Discrete Element Method) di particelle che interagiscono tramite forze di contatto, attrito e coesione, con caduta gravitazionale e adesione al terreno.
+**What it simulates:**
+DEM (Discrete Element Method) simulation of particles interacting through contact, friction and cohesion forces, falling under gravity and sticking to the ground.
 
-**Funzionalità Warp utilizzate:**
-• `@wp.kernel`/`@wp.func` - Decoratori per funzioni GPU parallelizzate
-• `wp.HashGrid` - Struttura dati spaziale per ricerca rapida dei vicini
-• `wp.hash_grid_query()` - Query spaziale efficiente per particelle adiacenti  
-• `wp.array()` - Arrays GPU per posizioni, velocità e forze
-• `wp.ScopedCapture`/CUDA graphs - Ottimizzazione performance tramite pre-compilazione
-• `wp.render.UsdRenderer` - Rendering diretto in formato USD
+**Warp features used:**
+• `@wp.kernel`/`@wp.func` - Decorators for parallelised GPU functions
+• `wp.HashGrid` - Spatial data structure for fast neighbour search
+• `wp.hash_grid_query()` - Efficient spatial query for adjacent particles  
+• `wp.array()` - GPU arrays for positions, velocities and forces
+• `wp.ScopedCapture`/CUDA graphs - Performance optimisation through pre-compilation
+• `wp.render.UsdRenderer` - Direct rendering to USD format
 
-**Capacità chiave:**
-Warp gestisce automaticamente il passaggio CPU-GPU dei dati e ottimizza l'esecuzione tramite CUDA graphs. L'hashing spaziale permette simulazioni scalabili con migliaia di particelle mantenendo performance real-time.
+**Key capability:**
+Warp handles CPU-GPU data transfer automatically and optimises execution through CUDA graphs. Spatial hashing makes simulations with thousands of particles scalable while keeping real-time performance.
 
-## fluid - Simulazione Fluidi 2D
+## fluid - 2D Fluid Simulation
 
-**Fenomeno simulato:**
-Implementa un risolutore "Stable Fluids" 2D per la dinamica computazionale dei fluidi, con advection semi-Lagrangiano, proiezione della pressione e forze gravitazionali su griglia regolare.
+**What it simulates:**
+Implements a 2D "Stable Fluids" solver for computational fluid dynamics, with semi-Lagrangian advection, pressure projection and gravity forces on a regular grid.
 
-**Funzionalità Warp utilizzate:**
-• `wp.array2d()` - Arrays bidimensionali per simulazione su griglia
-• `wp.constant()` - Costanti compile-time per dimensioni griglia
-• `@wp.func` - Funzioni helper per interpolazione bilineare e sampling
-• Multiple `@wp.kernel` - Kernels specializzati (advection, divergence, pressure_solve)
-• `wp.ScopedCapture` - Ottimizzazione iterazioni pressione tramite CUDA graphs
+**Warp features used:**
+• `wp.array2d()` - Two-dimensional arrays for grid-based simulation
+• `wp.constant()` - Compile-time constants for grid dimensions
+• `@wp.func` - Helper functions for bilinear interpolation and sampling
+• Multiple `@wp.kernel` - Specialised kernels (advection, divergence, pressure_solve)
+• `wp.ScopedCapture` - Pressure iteration optimisation through CUDA graphs
 
-**Capacità chiave:**
-Warp gestisce automaticamente le operazioni su griglia 2D complesse con alta efficienza GPU e interpolazione smooth. Il ciclo iterativo del risolutore di pressione viene pre-compilato per massime performance real-time.
+**Key capability:**
+Warp handles complex 2D grid operations automatically, with high GPU efficiency and smooth interpolation. The iterative loop of the pressure solver is pre-compiled for maximum real-time performance.
 
-## graph capture - Generazione Noise Procedurale
+## graph capture - Procedural Noise Generation
 
-**Fenomeno simulato:**
-Genera noise procedurale animato usando fractional Brownian motion (FBM) con multiple ottave e frequenze. La griglia di coordinate scorre nel tempo per creare effetti animati.
+**What it simulates:**
+Generates animated procedural noise using fractional Brownian motion (FBM) across multiple octaves and frequencies. The coordinate grid scrolls over time to produce animated effects.
 
-**Funzionalità Warp utilizzate:**
-• `wp.ScopedCapture()` - Cattura sequenze di kernel launches in CUDA graphs
-• `wp.capture_launch()` - Esecuzione ottimizzata di graphs pre-registrati  
-• `wp.noise()` - Generazione rumore procedurale GPU-nativo
-• `wp.rand_init()` - Inizializzazione stati random per deterministico seeding
-• Multiple kernel launches - Loop di 16 ottave con frequenze/ampiezze variabili
-• `wp.ScopedTimer()` - Profiling performance automatico
+**Warp features used:**
+• `wp.ScopedCapture()` - Captures sequences of kernel launches into CUDA graphs
+• `wp.capture_launch()` - Optimised execution of pre-recorded graphs  
+• `wp.noise()` - GPU-native procedural noise generation
+• `wp.rand_init()` - Random state initialisation for deterministic seeding
+• Multiple kernel launches - Loop over 16 octaves with varying frequencies/amplitudes
+• `wp.ScopedTimer()` - Automatic performance profiling
 
-**Capacità chiave:**
-CUDA graph capture elimina l'overhead di launch ripetuti, accelerando drasticamente sequenze di kernel identici. Warp fornisce primitive noise/random ottimizzate per GPU, ideali per generazione procedurale real-time.
+**Key capability:**
+CUDA graph capture removes the overhead of repeated launches, dramatically speeding up sequences of identical kernels. Warp provides GPU-optimised noise/random primitives, ideal for real-time procedural generation.
 
-## marching cubes - Estrazione Superfici da Campi SDF
+## marching cubes - Surface Extraction from SDF Fields
 
-**Fenomeno simulato:**
-Utilizza l'algoritmo marching cubes per estrarre superfici iso-livello da campi di densità SDF (Signed Distance Fields). Genera primitive geometriche animate (box, torus) combinate con operazioni smooth blending.
+**What it simulates:**
+Uses the marching cubes algorithm to extract iso-level surfaces from SDF (Signed Distance Fields) density fields. Generates animated geometric primitives (box, torus) combined through smooth blending operations.
 
-**Funzionalità Warp utilizzate:**
-• `wp.MarchingCubes()` - Classe built-in per estrazione automatica superfici mesh
-• `wp.array3d()` - Arrays tridimensionali per rappresentazione campi volumetrici  
-• Funzioni SDF `@wp.func` - Primitive geometriche (box, torus) e trasformazioni spaziali
-• `wp.quat_*()` operations - Sistema quaternioni per rotazioni animate smooth
-• `.surface()` method - Estrazione mesh triangolare da threshold iso-superficie
+**Warp features used:**
+• `wp.MarchingCubes()` - Built-in class for automatic mesh surface extraction
+• `wp.array3d()` - Three-dimensional arrays representing volumetric fields  
+• SDF `@wp.func` functions - Geometric primitives (box, torus) and spatial transforms
+• `wp.quat_*()` operations - Quaternion system for smooth animated rotations
+• `.surface()` method - Triangle mesh extraction from an iso-surface threshold
 
-**Capacità chiave:**
-Warp integra nativamente marching cubes GPU-ottimizzato che converte automaticamente campi volumetrici in mesh renderizzabili. Le funzioni SDF procedurali permettono geometrie complesse animate con blending matematico preciso.
+**Key capability:**
+Warp natively integrates GPU-optimised marching cubes, converting volumetric fields into renderable meshes automatically. Procedural SDF functions allow complex animated geometries with precise mathematical blending.
 
-## mesh - Simulazione PBD con Collisioni Mesh Deformanti
+## mesh - PBD Simulation with Deforming Mesh Collisions
 
-**Fenomeno simulato:**
-Simulazione particellare PBD (Position Based Dynamics) con collisioni contro una mesh triangolare deformante. Le particelle cadono per gravità e collidono con un modello 3D (bunny) che si deforma dinamicamente usando animazione sinusoidale.
+**What it simulates:**
+PBD (Position Based Dynamics) particle simulation colliding against a deforming triangle mesh. Particles fall under gravity and collide with a 3D model (bunny) that deforms dynamically through sinusoidal animation.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Mesh()` - Classe per mesh triangolari con BVH (Bounding Volume Hierarchy) integrato
-• `wp.mesh_query_point_sign_normal()` - Query spatial collision point-to-mesh ottimizzate
-• `wp.mesh_eval_position()` - Calcolo posizioni precise sulla superficie triangolare
-• `.refit()` method - Aggiornamento dinamico BVH dopo deformazioni mesh
-• USD integration - Caricamento asset tramite libreria Pixar USD
+**Warp features used:**
+• `wp.Mesh()` - Class for triangle meshes with built-in BVH (Bounding Volume Hierarchy)
+• `wp.mesh_query_point_sign_normal()` - Optimised point-to-mesh spatial collision queries
+• `wp.mesh_eval_position()` - Precise position computation on the triangle surface
+• `.refit()` method - Dynamic BVH update after mesh deformation
+• USD integration - Asset loading through the Pixar USD library
 
-**Capacità chiave:**
-Warp gestisce automaticamente strutture dati spaziali BVH che si aggiornano efficientemente durante deformazioni mesh. Le query di collisione sfruttano hardware-acceleration per performance real-time anche con migliaia di particelle.
+**Key capability:**
+Warp automatically manages BVH spatial data structures that update efficiently during mesh deformation. Collision queries exploit hardware acceleration for real-time performance even with thousands of particles.
 
-## nvdb - Simulazione Particelle con Campi SDF Volumetrici
+## nvdb - Particle Simulation with Volumetric SDF Fields
 
-**Fenomeno simulato:**
-Simulazione particellare PBD con collisioni contro campi SDF (Signed Distance Field) in formato NanoVDB. Le particelle cadono per gravità e collidono con geometrie complesse rappresentate come volumi discretizzati.
+**What it simulates:**
+PBD particle simulation colliding against SDF (Signed Distance Field) fields in NanoVDB format. Particles fall under gravity and collide with complex geometries represented as discretised volumes.
 
-**Funzionalità Warp utilizzate:**
-• `wp.Volume.load_from_nvdb()` - Caricamento diretto file NanoVDB da Houdini/Blender
-• `wp.volume_sample_f()` - Sampling trilineare valori SDF da griglia volumetrica
-• `wp.volume_sample_grad_f()` - Campionamento simultaneo valore e gradiente SDF
-• `wp.volume_world_to_index()` - Conversione coordinate mondo-griglia automatica
-• Custom `volume_grad()` - Calcolo gradienti tramite differenze finite per normali superficie
+**Warp features used:**
+• `wp.Volume.load_from_nvdb()` - Direct loading of NanoVDB files from Houdini/Blender
+• `wp.volume_sample_f()` - Trilinear sampling of SDF values from a volumetric grid
+• `wp.volume_sample_grad_f()` - Simultaneous sampling of SDF value and gradient
+• `wp.volume_world_to_index()` - Automatic world-to-grid coordinate conversion
+• Custom `volume_grad()` - Gradient computation by finite differences for surface normals
 
-**Capacità chiave:**
-Warp integra nativamente il formato NanoVDB industriale, permettendo collisioni precise con geometrie arbitrariamente complesse. Il sampling hardware-accelerated mantiene performance real-time anche con decine di migliaia di particelle su volumi ad alta risoluzione.
+**Key capability:**
+Warp natively supports the industry-standard NanoVDB format, allowing precise collisions with arbitrarily complex geometries. Hardware-accelerated sampling keeps real-time performance even with tens of thousands of particles on high-resolution volumes.
 
-## raycast - Ray Tracer con Mesh Triangolari
+## raycast - Ray Tracer with Triangle Meshes
 
-**Fenomeno simulato:**
-Implementa un ray tracer di base che lancia raggi dalla camera attraverso ogni pixel per calcolare intersezioni con mesh triangolari. Renderizza usando le normali delle superfici come valori di colore per visualizzazione 3D.
+**What it simulates:**
+Implements a basic ray tracer that casts rays from the camera through every pixel to compute intersections with triangle meshes. Renders using surface normals as colour values for 3D visualisation.
 
-**Funzionalità Warp utilizzate:**
-• `wp.mesh_query_ray()` - Query ray-triangle intersection accelerata hardware  
-• `wp.Mesh()` - Struttura dati mesh con BVH automatico per spatial queries
-• USD integration - Caricamento diretto asset da pipeline Pixar USD
-• Parallelizzazione pixel - Un kernel thread per pixel con coordinate automatiche
-• `query.normal` - Accesso diretto ai dati geometrici (normali, posizioni) dell'intersezione
+**Warp features used:**
+• `wp.mesh_query_ray()` - Hardware-accelerated ray-triangle intersection query  
+• `wp.Mesh()` - Mesh data structure with automatic BVH for spatial queries
+• USD integration - Direct asset loading from the Pixar USD pipeline
+• Pixel parallelisation - One kernel thread per pixel with automatic coordinates
+• `query.normal` - Direct access to the geometric data (normals, positions) of the hit
 
-**Capacità chiave:**
-Warp trasforma automaticamente mesh triangolari in strutture BVH ottimizzate per ray casting GPU. La parallelizzazione massiva permette rendering real-time di scene complesse senza gestione manuale dei thread o ottimizzazioni spaziali.
+**Key capability:**
+Warp automatically turns triangle meshes into BVH structures optimised for GPU ray casting. Massive parallelisation allows real-time rendering of complex scenes with no manual thread management or spatial optimisation.
 
-## raymarch - Renderer SDF con Ray Marching
+## raymarch - SDF Renderer with Ray Marching
 
-**Fenomeno simulato:**
-Implementa un renderer ray marching che utilizza Signed Distance Functions (SDF) per definire geometrie procedurali. Crea scene con primitive (sfere, box, piani) combinate tramite operazioni booleane, con illuminazione avanzata che include diffuse, specular, fresnel e soft shadows.
+**What it simulates:**
+Implements a ray marching renderer that uses Signed Distance Functions (SDF) to define procedural geometries. Builds scenes from primitives (spheres, boxes, planes) combined through boolean operations, with advanced lighting including diffuse, specular, fresnel and soft shadows.
 
-**Funzionalità Warp utilizzate:**
-• `@wp.func` SDF primitives - Funzioni matematiche per generare geometrie procedurali (sfera, box, piano)
-• Operazioni booleane SDF - Union, subtract, intersect per combinare primitive complesse
-• Adaptive ray marching - Loop con step size dinamico basato sulla distanza SDF
-• Gradient-based normals - Calcolo normali tramite differenze finite del gradiente SDF
-• Advanced lighting model - Diffuse, specular, fresnel reflection e soft shadow calculation
-• Gamma correction - Post-processing colore per output realistico
+**Warp features used:**
+• `@wp.func` SDF primitives - Mathematical functions generating procedural geometry (sphere, box, plane)
+• Boolean SDF operations - Union, subtract, intersect for combining complex primitives
+• Adaptive ray marching - Loop with dynamic step size based on the SDF distance
+• Gradient-based normals - Normal computation by finite differences of the SDF gradient
+• Advanced lighting model - Diffuse, specular, fresnel reflection and soft shadow calculation
+• Gamma correction - Colour post-processing for realistic output
 
-**Capacità chiave:**
-Warp permette rendering procedurale complesso interamente su GPU senza geometrie esplicite. Il ray marching matematico genera dettagli infiniti con illuminazione physically-based, ideale per scene procedurali e effetti artistici.
+**Key capability:**
+Warp allows complex procedural rendering entirely on the GPU with no explicit geometry. Mathematical ray marching generates infinite detail with physically-based lighting, ideal for procedural scenes and artistic effects.
 
-## sample mesh - Campionamento Uniforme Superfici Mesh
+## sample mesh - Uniform Sampling of Mesh Surfaces
 
-**Fenomeno simulato:**
-Campiona punti uniformemente distribuiti sulla superficie di una mesh triangolare utilizzando una Cumulative Distribution Function (CDF). Calcola aree dei triangoli per costruire distribuzione probabilistica proporzionale, generando punti casuali che rispettano la densità geometrica della superficie.
+**What it simulates:**
+Samples uniformly distributed points on the surface of a triangle mesh using a Cumulative Distribution Function (CDF). Computes triangle areas to build a proportional probability distribution, generating random points that respect the geometric density of the surface.
 
-**Funzionalità Warp utilizzate:**
-• `wp.mesh_eval_position()` - Valutazione posizioni superficie tramite coordinate baricentriche
-• `wp.atomic_add()` - Operazioni atomiche GPU per somme parallele thread-safe
-• `wp.lower_bound()` - Binary search ottimizzata per sampling da CDF
-• `wp.randf()` - Generazione numeri random GPU con seeding deterministico per frame
-• Barycentric coordinate sampling - Generazione punti uniformi all'interno triangoli
+**Warp features used:**
+• `wp.mesh_eval_position()` - Surface position evaluation through barycentric coordinates
+• `wp.atomic_add()` - Atomic GPU operations for thread-safe parallel sums
+• `wp.lower_bound()` - Optimised binary search for CDF sampling
+• `wp.randf()` - GPU random number generation with deterministic per-frame seeding
+• Barycentric coordinate sampling - Uniform point generation inside triangles
 
-**Capacità chiave:**
-Warp implementa nativamente tutte le primitive per sampling geometrico avanzato, incluse ricerche binarie e coordinate baricentriche GPU-ottimizzate. Il sistema gestisce parallelizzazione massiva mantenendo distribuzione statistica matematicamente corretta per applicazioni Monte Carlo.
+**Key capability:**
+Warp natively implements every primitive needed for advanced geometric sampling, including GPU-optimised binary searches and barycentric coordinates. The system handles massive parallelisation while keeping the statistical distribution mathematically correct for Monte Carlo applications.
 
-## sph - Simulazione Fluidi con Smoothed Particle Hydrodynamics
+## sph - Fluid Simulation with Smoothed Particle Hydrodynamics
 
-**Fenomeno simulato:**
-Simulazione fluidi SPH utilizzando kernels matematici per calcolare densità, forze di pressione e viscosità tra particelle. Implementa schema kick-drift per integrazione temporale con gravità, bounds collision e damping per comportamento fluido realistico.
+**What it simulates:**
+SPH fluid simulation using mathematical kernels to compute density, pressure forces and viscosity between particles. Implements a kick-drift scheme for time integration with gravity, bounds collision and damping for realistic fluid behaviour.
 
-**Funzionalità Warp utilizzate:**
-• `wp.HashGrid` con `wp.hash_grid_query()` - Ricerca vicini spaziale per interazioni SPH
-• `wp.hash_grid_point_id()` - Ordinamento thread per celle per accesso memoria ottimizzato
-• Custom SPH kernels `@wp.func` - Density, pressure e viscous kernels matematici
-• Kick-drift integration - Schema numerico separato per velocità/posizione update
-• Multi-step simulation - Substeps multipli per stabilità numerica con small timesteps
+**Warp features used:**
+• `wp.HashGrid` with `wp.hash_grid_query()` - Spatial neighbour search for SPH interactions
+• `wp.hash_grid_point_id()` - Thread ordering by cell for optimised memory access
+• Custom SPH kernels `@wp.func` - Mathematical density, pressure and viscous kernels
+• Kick-drift integration - Numerical scheme separating velocity and position updates
+• Multi-step simulation - Multiple substeps for numerical stability with small timesteps
 
-**Capacità chiave:**
-Warp permette implementazione diretta delle equazioni SPH matematiche complesse su GPU mantenendo performance real-time. L'hashing spaziale automatico gestisce efficiently migliaia di interazioni particella-particella per fluidi convincenti.
+**Key capability:**
+Warp allows the complex mathematical SPH equations to be implemented directly on the GPU while keeping real-time performance. Automatic spatial hashing handles thousands of particle-particle interactions efficiently for convincing fluids.
 
-## torch - Ottimizzazione Differenziabile con PyTorch Integration
+## torch - Differentiable Optimisation with PyTorch Integration
 
-**Fenomeno simulato:**
-Ottimizza la funzione di Rosenbrock non-convessa usando l'ottimizzatore Adam di PyTorch su particelle distribuite. Dimostra l'integrazione seamless tra Warp e PyTorch per differenziazione automatica e machine learning.
+**What it simulates:**
+Optimises the non-convex Rosenbrock function using PyTorch's Adam optimiser over distributed particles. Demonstrates the seamless integration between Warp and PyTorch for automatic differentiation and machine learning.
 
-**Funzionalità Warp utilizzate:**
-• `torch.autograd.Function` - Classe custom per integrare kernels Warp in computational graph PyTorch
-• `wp.from_torch()` / `wp.to_torch()` - Conversioni automatiche tensor PyTorch ↔ arrays Warp
-• `adjoint=True` - Differenziazione automatica backwards pass per gradient computation
-• `wp.device_to_torch()` - Gestione consistente device GPU tra frameworks
-• Rosenbrock `@wp.func` - Funzione matematica complessa valutata in parallelo su migliaia di punti
+**Warp features used:**
+• `torch.autograd.Function` - Custom class integrating Warp kernels into the PyTorch computational graph
+• `wp.from_torch()` / `wp.to_torch()` - Automatic conversion between PyTorch tensors and Warp arrays
+• `adjoint=True` - Automatic differentiation backward pass for gradient computation
+• `wp.device_to_torch()` - Consistent GPU device handling across frameworks
+• Rosenbrock `@wp.func` - Complex mathematical function evaluated in parallel over thousands of points
 
-**Capacità chiave:**
-Warp si integra nativamente con PyTorch mantenendo performance GPU ottimali e supporting automatic differentiation. Permette di incorporare computazioni high-performance custom direttamente in neural network training pipelines senza overhead significativo.
+**Key capability:**
+Warp integrates natively with PyTorch while keeping optimal GPU performance and supporting automatic differentiation. It allows custom high-performance computation to be embedded directly into neural network training pipelines without significant overhead.
 
-## wave - Simulazione Equazione delle Onde 2D
+## wave - 2D Wave Equation Simulation
 
-**Fenomeno simulato:**
-Risolve l'equazione delle onde 2D con differenze finite su griglia regolare, simulando propagazione ondosa con collisioni contro una sfera mobile. Integra temporalmente usando schema a substeps multipli per stabilità numerica.
+**What it simulates:**
+Solves the 2D wave equation with finite differences on a regular grid, simulating wave propagation with collisions against a moving sphere. Integrates in time using a multiple-substep scheme for numerical stability.
 
-**Funzionalità Warp utilizzate:**
-• Finite difference `laplacian()` - Operatore nabla quadrato per equazione onde differenziale
-• `wave_solve` kernel - Integratore temporale esplicito per propagazione ondosa
-• `wave_displace` - Forcing term sinusoidale per generazione onde da sfera mobile
-• Grid indexing 2D - Gestione automatica coordinate (x,y) → linear array indexing
-• `grid_update` - Conversione height field → mesh vertices per rendering dinamico
+**Warp features used:**
+• Finite difference `laplacian()` - Nabla-squared operator for the differential wave equation
+• `wave_solve` kernel - Explicit time integrator for wave propagation
+• `wave_displace` - Sinusoidal forcing term generating waves from the moving sphere
+• 2D grid indexing - Automatic handling of (x,y) coordinates → linear array indexing
+• `grid_update` - Height field → mesh vertices conversion for dynamic rendering
 
-**Capacità chiave:**
-Warp permette simulazioni PDE (Partial Differential Equations) complete su GPU con substeps automatici per accuracy/performance trade-off ottimale. L'aggiornamento real-time dei vertices mesh crea visualizzazioni fluide integrate con la fisica.
+**Key capability:**
+Warp allows complete PDE (Partial Differential Equations) simulations on the GPU with automatic substeps for an optimal accuracy/performance trade-off. Real-time mesh vertex updates produce fluid visualisations integrated with the physics.
 
 ---
