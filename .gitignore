@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Simulation output
+*.usd
+*.usda
+*.usdc
+usd/
+outputs/
+max_heights.csv
+
+# Refined meshes — deterministic output of script_refiner.py
+mesh_refined/
+
+# Blender working files — the container is a scaled box, the PLY export is enough
+*.blend
+*.blend1
+*.blend2
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
